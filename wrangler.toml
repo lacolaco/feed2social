@@ -10,4 +10,5 @@ name = "feed2social"
 crons = ["*/5 * * * *"]
 
 [vars]
+BSKY_ID = "lacolaco.bsky.social"
 NOTION_DATABASE_ID = "bce0d0a9147e468ca227788ca1797d28"

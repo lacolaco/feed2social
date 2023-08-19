@@ -9,10 +9,17 @@
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20230814.0",
-    "@notionhq/client": "^2.2.11",
-    "hono": "^3.4.3",
+    "@types/crypto-js": "^4.1.1",
     "prettier": "^3.0.2",
     "typescript": "^5.1.6",
     "wrangler": "^3.5.1"
+  },
+  "dependencies": {
+    "@atproto/api": "^0.6.4",
+    "@notionhq/client": "^2.2.11",
+    "crypto-js": "^4.1.1",
+    "hono": "^3.4.3",
+    "oauth-1.0a": "^2.2.6",
+    "tweet-truncator": "^3.0.1"
   }
 }

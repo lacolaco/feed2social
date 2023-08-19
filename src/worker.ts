@@ -2,12 +2,18 @@ import { Client as NotionClient, iteratePaginatedAPI } from '@notionhq/client';
 import { Hono } from 'hono';
 import { FeedItem } from './models';
 import { assertType } from './notion-utils';
-import { postMisskeyNote } from './social';
+import { createBlueskyPost, createMisskeyNote, createTwitterPost } from './social';
 
 export type Env = {
   NOTION_TOKEN: string;
   NOTION_DATABASE_ID: string;
   MISSKEY_TOKEN: string;
+  BSKY_ID: string;
+  BSKY_PASSWORD: string;
+  TWITTER_API_KEY: string;
+  TWITTER_API_SECRET: string;
+  TWITTER_ACCESS_TOKEN: string;
+  TWITTER_ACCESS_SECRET: string;
 };
 
 async function execute(env: Env) {
@@ -82,16 +88,18 @@ async function fetchNewFeedItems(notion: NotionClient, notionDatabaseId: string)
 
 async function postFeedItemsToSocial(items: FeedItem[], env: Env) {
   for (const item of items) {
-    const message = `🔖 "${item.title}" ${item.url} #laco_feed`;
+    await Promise.allSettled([
+      createMisskeyNote(item, env.MISSKEY_TOKEN),
+      createBlueskyPost(item, { identifier: env.BSKY_ID, password: env.BSKY_PASSWORD }),
+      createTwitterPost(item, {
+        consumerKey: env.TWITTER_API_KEY,
+        consumerSecret: env.TWITTER_API_SECRET,
+        accessToken: env.TWITTER_ACCESS_TOKEN,
+        accessSecret: env.TWITTER_ACCESS_SECRET,
+      }),
+    ]);
 
-    // misskey
-    await postMisskeyNote(message, env.MISSKEY_TOKEN);
-    // twitter
-    // TODO
-    // bluesky
-    // TODO
-
-    console.log(`posted: ${message}`);
+    console.log(`posted: ${item.title}`);
   }
 }
 
@@ -108,6 +116,7 @@ async function markFeedItemsAsProcessed(notion: NotionClient, newItems: FeedItem
 
 const app = new Hono<{ Bindings: Env }>();
 
+// for debugging
 app.get('/_/execute', async (c) => {
   const url = new URL(c.req.url);
   console.log(`triggered by fetch at ${url.toString()}`);
