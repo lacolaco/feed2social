@@ -11,3 +11,8 @@ crons = ["*/5 * * * *"]
 
 [vars]
 NOTION_DATABASE_ID = "bce0d0a9147e468ca227788ca1797d28"
+
+[[d1_databases]]
+binding = "DB"
+database_id = "0b3cc758-ec1e-4c10-b548-2473831a5305"
+database_name = "notion2rss"

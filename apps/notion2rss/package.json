@@ -2,9 +2,13 @@
   "name": "notion2rss",
   "scripts": {
     "deploy": "wrangler deploy",
-    "start": "wrangler dev --test-scheduled"
+    "start": "wrangler dev --test-scheduled",
+    "db:execute:local": "wrangler d1 execute notion2rss --local --file",
+    "db:execute": "wrangler d1 execute notion2rss --file"
   },
   "dependencies": {
-    "@notionhq/client": "^2.2.11"
+    "@notionhq/client": "^2.2.11",
+    "feed": "^4.2.2",
+    "hono": "^3.4.3"
   }
 }
