@@ -45,7 +45,7 @@ export async function createTwitterPost(
   auth: { consumerKey: string; consumerSecret: string; accessToken: string; accessSecret: string },
 ) {
   const text = truncate(
-    { title: item.title, url: item.url, tags: ['#laco_feed'] },
+    { title: item.title, url: item.url, tags: ['laco_feed'] },
     {
       defaultPrefix: '🔖',
       template: '"%title%" %url% %tags%',
