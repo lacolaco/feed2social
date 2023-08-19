@@ -1,6 +1,6 @@
 compatibility_date = "2023-05-15"
 main = "src/worker.ts"
-name = "notion2rss"
+name = "feed2social"
 
 # Cron Triggers
 # Docs: https://developers.cloudflare.com/workers/platform/triggers/cron-triggers/
@@ -11,8 +11,3 @@ crons = ["*/5 * * * *"]
 
 [vars]
 NOTION_DATABASE_ID = "bce0d0a9147e468ca227788ca1797d28"
-
-[[d1_databases]]
-binding = "DB"
-database_id = "f35702c2-9948-4a64-8fa3-9db1cea4a534"
-database_name = "feed2social"

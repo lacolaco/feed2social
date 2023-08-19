@@ -3,11 +3,14 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "deploy": "pnpm --filter \"./apps/**\" run deploy",
+    "deploy": "wrangler deploy",
+    "start": "wrangler dev --test-scheduled",
     "format": "prettier --cache --write \"./**/*.{ts,js,json,md}\""
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20230814.0",
+    "@notionhq/client": "^2.2.11",
+    "hono": "^3.4.3",
     "prettier": "^3.0.2",
     "typescript": "^5.1.6",
     "wrangler": "^3.5.1"
