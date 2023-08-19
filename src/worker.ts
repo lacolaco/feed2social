@@ -1,7 +1,7 @@
-import { Client as NotionClient, iteratePaginatedAPI } from '@notionhq/client';
+import { Client as NotionClient } from '@notionhq/client';
 import { Hono } from 'hono';
 import { FeedItem } from './models';
-import { assertType } from './notion-utils';
+import { fetchNewFeedItems, markFeedItemsAsProcessed } from './repository';
 import { createBlueskyPost, createMisskeyNote, createTwitterPost } from './social';
 
 export type Env = {
@@ -16,6 +16,8 @@ export type Env = {
   TWITTER_ACCESS_SECRET: string;
 };
 
+const isDevelopment = process.env.NODE_ENV === 'development';
+
 async function execute(env: Env) {
   const notion = new NotionClient({ auth: env.NOTION_TOKEN });
 
@@ -29,6 +31,13 @@ async function execute(env: Env) {
   }
 
   if (newItems.length === 0) {
+    return;
+  }
+
+  if (isDevelopment) {
+    console.log(JSON.stringify(newItems, null, 2));
+
+    console.log('skipped posting to social because of development mode');
     return;
   }
 
@@ -47,45 +56,6 @@ async function execute(env: Env) {
   }
 }
 
-async function fetchNewFeedItems(notion: NotionClient, notionDatabaseId: string): Promise<FeedItem[]> {
-  const items: FeedItem[] = [];
-  for await (const block of iteratePaginatedAPI(notion.databases.query, {
-    database_id: notionDatabaseId,
-    sorts: [{ timestamp: 'created_time', direction: 'descending' }],
-    filter: {
-      and: [
-        {
-          timestamp: 'created_time',
-          created_time: { this_week: {} },
-        },
-        {
-          property: 'feed2social',
-          checkbox: { equals: false },
-        },
-      ],
-    },
-  })) {
-    if (block.object !== 'page' || !('properties' in block)) {
-      continue;
-    }
-    const { properties } = block;
-
-    assertType('title', properties.title);
-    assertType('url', properties.url);
-
-    const title = properties.title.title.map((t) => t.plain_text).join('') ?? '';
-    const url = properties.url.url ?? '';
-
-    if (title === '' || url === '') {
-      continue;
-    }
-
-    items.push({ notionBlockId: block.id, title, url });
-  }
-
-  return items;
-}
-
 async function postFeedItemsToSocial(items: FeedItem[], env: Env) {
   for (const item of items) {
     await Promise.allSettled([
@@ -100,17 +70,6 @@ async function postFeedItemsToSocial(items: FeedItem[], env: Env) {
     ]);
 
     console.log(`posted: ${item.title}`);
-  }
-}
-
-async function markFeedItemsAsProcessed(notion: NotionClient, newItems: FeedItem[]) {
-  for (const item of newItems) {
-    await notion.pages.update({
-      page_id: item.notionBlockId,
-      properties: {
-        feed2social: { checkbox: true },
-      },
-    });
   }
 }
 
