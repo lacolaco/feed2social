@@ -11,7 +11,7 @@ import { FeedItem } from './models';
  * @see https://misskey-hub.net/docs/api/endpoints/notes/create.html
  */
 export async function createMisskeyNote(item: FeedItem, authToken: string) {
-  const text = `🔖 ${item.note ? `${item.note} "${item.title}"` : `"${item.title}"`} ${item.url} #laco_feed`;
+  const text = `${item.note ?? '🔖'} "${item.title}" ${item.url} #laco_feed`;
   await fetch('https://misskey.io/api/notes/create', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -27,7 +27,7 @@ const bsky = new BskyAgent({ service: 'https://bsky.social' });
 export async function createBlueskyPost(item: FeedItem, auth: { identifier: string; password: string }) {
   await bsky.login({ identifier: auth.identifier, password: auth.password });
 
-  const text = `🔖 ${item.note ? `${item.note} "${item.title}"` : `"${item.title}"`} ${item.url}`;
+  const text = `${item.note ?? '🔖'} "${item.title}" ${item.url}`;
 
   const rt = new RichText({ text });
   await rt.detectFacets(bsky);
