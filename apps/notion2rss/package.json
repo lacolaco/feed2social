@@ -3,8 +3,8 @@
   "scripts": {
     "deploy": "wrangler deploy",
     "start": "wrangler dev --test-scheduled",
-    "db:execute:local": "wrangler d1 execute notion2rss --local --file",
-    "db:execute": "wrangler d1 execute notion2rss --file"
+    "db:execute:local": "wrangler d1 execute feed2social --local --file",
+    "db:execute": "wrangler d1 execute feed2social --file"
   },
   "dependencies": {
     "@notionhq/client": "^2.2.11",
