@@ -1,0 +1,7 @@
+{
+  "name": "notion2rss",
+  "scripts": {
+    "deploy": "wrangler deploy",
+    "start": "wrangler dev"
+  }
+}
