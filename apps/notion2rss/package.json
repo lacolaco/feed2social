@@ -2,6 +2,9 @@
   "name": "notion2rss",
   "scripts": {
     "deploy": "wrangler deploy",
-    "start": "wrangler dev"
+    "start": "wrangler dev --test-scheduled"
+  },
+  "dependencies": {
+    "@notionhq/client": "^2.2.11"
   }
 }

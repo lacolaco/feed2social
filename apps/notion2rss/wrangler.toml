@@ -1,6 +1,6 @@
-name = "notion2rss"
-main = "src/worker.ts"
 compatibility_date = "2023-05-15"
+main = "src/worker.ts"
+name = "notion2rss"
 
 # Cron Triggers
 # Docs: https://developers.cloudflare.com/workers/platform/triggers/cron-triggers/
@@ -8,3 +8,6 @@ compatibility_date = "2023-05-15"
 [triggers]
 # Every 5 minutes
 crons = ["*/5 * * * *"]
+
+[vars]
+NOTION_DATABASE_ID = "bce0d0a9147e468ca227788ca1797d28"

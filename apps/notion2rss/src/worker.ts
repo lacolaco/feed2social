@@ -1,17 +1,3 @@
-/**
- * Welcome to Cloudflare Workers!
- *
- * This is a template for a Scheduled Worker: a Worker that can run on a
- * configurable interval:
- * https://developers.cloudflare.com/workers/platform/triggers/cron-triggers/
- *
- * - Run `npm run dev` in your terminal to start a development server
- * - Open a browser tab at http://localhost:8787/ to see your worker in action
- * - Run `npm run deploy` to publish your worker
- *
- * Learn more at https://developers.cloudflare.com/workers/
- */
-
 export interface Env {
   // Example binding to KV. Learn more at https://developers.cloudflare.com/workers/runtime-apis/kv/
   // MY_KV_NAMESPACE: KVNamespace;
@@ -30,20 +16,69 @@ export interface Env {
   //
   // Example binding to a D1 Database. Learn more at https://developers.cloudflare.com/workers/platform/bindings/#d1-database-bindings
   // DB: D1Database
+  NOTION_TOKEN: string;
+  NOTION_DATABASE_ID: string;
 }
 
+import { Client, iteratePaginatedAPI } from '@notionhq/client';
+
 export default {
-  // The scheduled handler is invoked at the interval set in our wrangler.toml's
-  // [[triggers]] configuration.
   async scheduled(event: ScheduledEvent, env: Env, ctx: ExecutionContext): Promise<void> {
-    // A Cron Trigger can make requests to other endpoints on the Internet,
-    // publish to a Queue, query a D1 Database, and much more.
-    //
-    // We'll keep it simple and make an API call to a Cloudflare API:
-    let resp = await fetch('https://api.cloudflare.com/client/v4/ips');
-    let wasSuccessful = resp.ok ? 'success' : 'fail';
-    // You could store this result in KV, write to a D1 Database, or publish to a Queue.
-    // In this template, we'll just log the result:
-    console.log(`trigger fired at ${event.cron}: ${wasSuccessful}`);
+    console.log(`triggered by cron at ${event.cron}`);
+    await execute(env, ctx);
+  },
+  async fetch(req: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
+    const url = new URL(req.url);
+    console.log(`triggered by fetch at ${url.toString()}`);
+
+    if (url.pathname !== '/execute') {
+      return new Response('Not Found', { status: 404 });
+    }
+
+    await execute(env, ctx);
+    return new Response('OK');
   },
 };
+
+async function execute(env: Env, ctx: ExecutionContext) {
+  // Initializing a client
+  const notion = new Client({
+    auth: env.NOTION_TOKEN,
+  });
+
+  const newItems = [];
+
+  for await (const block of iteratePaginatedAPI(notion.databases.query, {
+    database_id: env.NOTION_DATABASE_ID,
+    sorts: [{ timestamp: 'created_time', direction: 'descending' }],
+    filter: {
+      and: [
+        {
+          timestamp: 'created_time',
+          created_time: { this_week: {} },
+        },
+        {
+          property: 'notion2rss',
+          checkbox: { equals: false },
+        },
+      ],
+    },
+  })) {
+    if (block.object !== 'page' || !('properties' in block)) {
+      continue;
+    }
+    console.log(JSON.stringify(block));
+    newItems.push(block);
+  }
+  console.log(`new items: ${newItems.length}`);
+
+  // mark as processed
+  for (const item of newItems) {
+    await notion.pages.update({
+      page_id: item.id,
+      properties: {
+        notion2rss: { checkbox: true },
+      },
+    });
+  }
+}
