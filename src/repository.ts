@@ -47,8 +47,8 @@ export async function markFeedItemAsProcessed(notion: NotionClient, item: FeedIt
   return await notion.pages.update({
     page_id: item.notionBlockId,
     properties: {
-      // update title
       title: { title: [{ type: 'text', text: { content: item.title } }] },
+      note: { rich_text: item.note ? [{ type: 'text', text: { content: item.note } }] : [] },
       feed2social: { checkbox: true },
     },
   });
