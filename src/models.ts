@@ -4,3 +4,7 @@ export type FeedItem = {
   url: string;
   note?: string;
 };
+
+export interface SocialPostSender {
+  sendPost(item: FeedItem): Promise<void>;
+}

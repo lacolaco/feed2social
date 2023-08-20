@@ -42,17 +42,15 @@ export async function fetchNewFeedItems(notion: NotionClient, notionDatabaseId: 
   return items;
 }
 
-export async function markFeedItemsAsProcessed(notion: NotionClient, newItems: FeedItem[]) {
-  for (const item of newItems) {
-    await notion.pages.update({
-      page_id: item.notionBlockId,
-      properties: {
-        // update title
-        title: { title: [{ type: 'text', text: { content: item.title } }] },
-        feed2social: { checkbox: true },
-      },
-    });
-  }
+export async function markFeedItemAsProcessed(notion: NotionClient, item: FeedItem) {
+  return await notion.pages.update({
+    page_id: item.notionBlockId,
+    properties: {
+      // update title
+      title: { title: [{ type: 'text', text: { content: item.title } }] },
+      feed2social: { checkbox: true },
+    },
+  });
 }
 
 function assertType<T extends string>(type: T, obj: { type: string }): asserts obj is { type: T } {
