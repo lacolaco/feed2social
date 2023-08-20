@@ -50,7 +50,7 @@ async function execute(env: Env) {
       await markFeedItemAsProcessed(notion, item);
       for (const result of results) {
         if (result.status === 'rejected') {
-          throw new Error(`failed to post feed item to social: ${result.reason}`);
+          throw result.reason;
         }
       }
       console.log(`posted: ${item.title}`);
