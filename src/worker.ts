@@ -45,8 +45,14 @@ async function execute(env: Env) {
 
   try {
     for (const item of newItems) {
-      await Promise.all(postSenders.map((sender) => sender.sendPost(item)));
+      const results = await Promise.allSettled(postSenders.map((sender) => sender.sendPost(item)));
+      // always mark as processed even if failed to post to prevent infinite retry
       await markFeedItemAsProcessed(notion, item);
+      for (const result of results) {
+        if (result.status === 'rejected') {
+          throw new Error(`failed to post feed item to social: ${result.reason}`);
+        }
+      }
       console.log(`posted: ${item.title}`);
     }
   } catch (e) {
