@@ -76,8 +76,9 @@ if (isDevelopment) {
 export default {
   async scheduled(event: ScheduledEvent, env: Env, ctx: ExecutionContext): Promise<void> {
     const sentry = initSentry(env.SENTRY_DSN, ctx);
+    sentry.setContext('event', event);
     sentry.startSession();
-    event.waitUntil(
+    ctx.waitUntil(
       execute(env)
         .catch((e) => {
           console.error(e);
