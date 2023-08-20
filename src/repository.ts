@@ -34,7 +34,8 @@ export async function fetchNewFeedItems(notion: NotionClient, notionDatabaseId: 
       continue;
     }
     const notionTitle = properties.title.title.map((t) => t.plain_text).join('');
-    const note = notionTitle !== '' && title !== notionTitle ? notionTitle : undefined;
+    // title and notionTitle must be different
+    const note = !title.includes(notionTitle) && !notionTitle.includes(title) ? notionTitle : undefined;
 
     items.push({ notionBlockId: block.id, title, url, note });
   }
