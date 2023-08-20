@@ -1,12 +1,14 @@
 import { Client as NotionClient } from '@notionhq/client';
 import { Hono } from 'hono';
 import { FeedItem, SocialPostSender } from './models';
+import { initSentry } from './observability/sentry';
 import { fetchNewFeedItems, markFeedItemAsProcessed } from './repository';
 import { BlueskyPostSender } from './social/bluesky';
 import { MisskeyPostSender } from './social/misskey';
 import { TwitterPostSender } from './social/twitter';
 
 export type Env = {
+  SENTRY_DSN: string;
   NOTION_TOKEN: string;
   NOTION_DATABASE_ID: string;
   MISSKEY_TOKEN: string;
@@ -33,7 +35,6 @@ async function execute(env: Env) {
     newItems = await fetchNewFeedItems(notion, env.NOTION_DATABASE_ID);
     console.log(`new items: ${newItems.length}`);
   } catch (e) {
-    console.error(e);
     throw new Error(`failed to fetch new feed items: ${e}`);
   }
 
@@ -56,7 +57,6 @@ async function execute(env: Env) {
       console.log(`posted: ${item.title}`);
     }
   } catch (e) {
-    console.error(e);
     throw new Error(`failed to post feed items to social: ${e}`);
   }
 }
@@ -75,8 +75,14 @@ if (isDevelopment) {
 
 export default {
   async scheduled(event: ScheduledEvent, env: Env, ctx: ExecutionContext): Promise<void> {
+    const sentry = initSentry(env.SENTRY_DSN, ctx);
     console.log(`triggered by cron at ${event.cron}`);
-    await execute(env);
+    try {
+      await execute(env);
+    } catch (e) {
+      console.error(e);
+      sentry.captureException(e);
+    }
   },
   fetch: app.fetch,
 };
