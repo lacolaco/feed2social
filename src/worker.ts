@@ -77,7 +77,7 @@ export default {
   async scheduled(event: ScheduledEvent, env: Env, ctx: ExecutionContext): Promise<void> {
     const sentry = initSentry(env.SENTRY_DSN, ctx);
     sentry.setContext('event', event);
-    sentry.startSession();
+    const transaction = sentry.startTransaction({ name: 'scheduled' });
     ctx.waitUntil(
       execute(env)
         .catch((e) => {
@@ -86,7 +86,7 @@ export default {
           throw e;
         })
         .finally(() => {
-          sentry.endSession();
+          transaction.finish();
         }),
     );
   },
