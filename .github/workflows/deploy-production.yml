@@ -1,0 +1,27 @@
+name: deploy-production
+
+on:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - 'README.md'
+      - '.prettierrc'
+      - '.editorconfig'
+      - '.gitignore'
+      - '.github/**'
+      - 'docs/**'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version-file: 'package.json'
+      - run: corepack enable
+      - run: pnpm install
+      - run: pnpm run deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}

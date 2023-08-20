@@ -7,6 +7,10 @@
     "start": "NODE_ENV=development wrangler dev --test-scheduled",
     "format": "prettier --cache --write \"./**/*.{ts,js,json,md}\""
   },
+  "engines": {
+    "node": "^18.16.0"
+  },
+  "packageManager": "pnpm@8.6.9",
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20230814.0",
     "@types/crypto-js": "^4.1.1",
