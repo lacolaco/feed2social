@@ -76,13 +76,18 @@ if (isDevelopment) {
 export default {
   async scheduled(event: ScheduledEvent, env: Env, ctx: ExecutionContext): Promise<void> {
     const sentry = initSentry(env.SENTRY_DSN, ctx);
+    sentry.startSession();
     sentry.setContext('event', event);
     ctx.waitUntil(
-      execute(env).catch((e) => {
-        console.error(e);
-        sentry.captureException(e);
-        throw e;
-      }),
+      execute(env)
+        .catch((e) => {
+          console.error(e);
+          sentry.captureException(e);
+          throw e;
+        })
+        .finally(() => {
+          sentry.captureSession(true);
+        }),
     );
   },
   fetch: app.fetch,
