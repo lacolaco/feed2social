@@ -1,7 +1,7 @@
 import { Client as NotionClient } from '@notionhq/client';
 import { Hono } from 'hono';
 import { FeedItem, SocialPostSender } from './models';
-import { initSentry } from './observability/sentry';
+import { initSentry, Sentry } from './observability/sentry';
 import { fetchNewFeedItems, markFeedItemAsProcessed } from './repository';
 import { BlueskyPostSender } from './social/bluesky';
 import { MisskeyPostSender } from './social/misskey';
@@ -22,13 +22,15 @@ export type Env = {
 
 const isDevelopment = process.env.NODE_ENV === 'development';
 
-async function execute(env: Env) {
+async function execute(env: Env, sentry: Sentry) {
   const notion = new NotionClient({ auth: env.NOTION_TOKEN });
   const postSenders: SocialPostSender[] = [
     new MisskeyPostSender(env.MISSKEY_TOKEN),
     new BlueskyPostSender(env.BSKY_ID, env.BSKY_PASSWORD),
     new TwitterPostSender(env.TWITTER_API_KEY, env.TWITTER_API_SECRET, env.TWITTER_ACCESS_TOKEN, env.TWITTER_ACCESS_SECRET),
   ];
+
+  sentry.addBreadcrumb({ level: 'log', message: 'fetching new feed items' });
 
   let newItems: FeedItem[] = [];
   try {
@@ -44,8 +46,13 @@ async function execute(env: Env) {
     return;
   }
 
+  sentry.addBreadcrumb({ level: 'log', message: 'posting feed items to social' });
+
   try {
     for (const item of newItems) {
+      sentry.addBreadcrumb({ level: 'log', message: 'posting feed item to social', data: item });
+      console.log(`posting: ${item.title}`);
+
       const results = await Promise.allSettled(postSenders.map((sender) => sender.sendPost(item)));
       // always mark as processed even if failed to post to prevent infinite retry
       await markFeedItemAsProcessed(notion, item);
@@ -54,11 +61,12 @@ async function execute(env: Env) {
           throw result.reason;
         }
       }
-      console.log(`posted: ${item.title}`);
     }
   } catch (e) {
     throw new Error(`failed to post feed items to social: ${e}`);
   }
+
+  sentry.addBreadcrumb({ level: 'log', message: 'done' });
 }
 
 const app = new Hono<{ Bindings: Env }>();
@@ -66,10 +74,19 @@ const app = new Hono<{ Bindings: Env }>();
 if (isDevelopment) {
   // for debugging
   app.get('/_/execute', async (c) => {
+    const sentry = initSentry(c.env.SENTRY_DSN, c.executionCtx);
     const url = new URL(c.req.url);
     console.log(`triggered by fetch at ${url.toString()}`);
-    await execute(c.env);
-    return c.text('ok');
+    try {
+      await execute(c.env, sentry);
+      return c.text('ok');
+    } catch (e) {
+      console.error(e);
+      sentry.captureException(e);
+      return c.text('error', 500);
+    } finally {
+      sentry.captureMessage('done');
+    }
   });
 }
 
@@ -79,7 +96,7 @@ export default {
     sentry.startSession();
     sentry.setContext('event', event);
     ctx.waitUntil(
-      execute(env)
+      execute(env, sentry)
         .catch((e) => {
           console.error(e);
           sentry.captureException(e);
