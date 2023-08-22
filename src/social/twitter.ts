@@ -16,14 +16,7 @@ export class TwitterPostSender implements SocialPostSender {
    * @see https://developer.twitter.com/en/docs/twitter-api/tweets/manage-tweets/api-reference/post-tweets
    */
   async sendPost(item: FeedItem): Promise<void> {
-    const text = truncate(
-      { desc: item.note, title: item.title, url: item.url, tags: ['laco_feed'] },
-      {
-        defaultPrefix: '🔖',
-        template: '%desc% "%title%" %url% %tags%',
-        truncatedOrder: ['title', 'desc'],
-      },
-    );
+    const text = buildText(item);
 
     const resp = await this.fetchWithAuth('https://api.twitter.com/2/tweets', 'POST', { text });
     if (!resp.ok) {
@@ -51,4 +44,40 @@ export class TwitterPostSender implements SocialPostSender {
       body: JSON.stringify(body),
     });
   }
+}
+
+function buildText(item: FeedItem) {
+  return truncate(
+    { desc: item.note ?? '', title: item.title, url: item.url, tags: ['laco_feed'] },
+    {
+      defaultPrefix: '🔖',
+      template: '%desc% "%title%" %url% %tags%',
+      truncatedOrder: ['title', 'desc'],
+    },
+  );
+}
+
+// in-source test suites
+if (import.meta.vitest) {
+  const { describe, it, expect } = import.meta.vitest;
+  describe('buildText', () => {
+    it('without note', () => {
+      const text = buildText({
+        notionBlockId: 'blockId',
+        url: 'https://example.com',
+        title: 'example',
+      });
+      expect(text).toBe('🔖 "example" https://example.com #laco_feed');
+    });
+
+    it('with note', () => {
+      const text = buildText({
+        notionBlockId: 'blockId',
+        url: 'https://example.com',
+        title: 'example',
+        note: 'note',
+      });
+      expect(text).toBe('note "example" https://example.com #laco_feed');
+    });
+  });
 }

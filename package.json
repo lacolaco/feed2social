@@ -5,7 +5,8 @@
   "scripts": {
     "deploy": "wrangler deploy",
     "start": "NODE_ENV=development wrangler dev --test-scheduled",
-    "format": "prettier --cache --write \"./**/*.{ts,js,json,md}\""
+    "format": "prettier --cache --write \"./**/*.{ts,js,json,md}\"",
+    "test": "vitest"
   },
   "engines": {
     "node": "^18.16.0"
@@ -16,6 +17,7 @@
     "@types/crypto-js": "^4.1.1",
     "prettier": "^3.0.2",
     "typescript": "^5.1.6",
+    "vitest": "^0.34.2",
     "wrangler": "^3.5.1"
   },
   "dependencies": {
