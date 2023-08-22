@@ -49,11 +49,7 @@ export class TwitterPostSender implements SocialPostSender {
 function buildText(item: FeedItem) {
   return truncate(
     { desc: item.note ?? '', title: item.title, url: item.url, tags: ['laco_feed'] },
-    {
-      defaultPrefix: '🔖',
-      template: '%desc% "%title%" %url% %tags%',
-      truncatedOrder: ['title', 'desc'],
-    },
+    { defaultPrefix: '🔖', template: '%desc% "%title%" %url% %tags%', truncatedOrder: ['title', 'desc'] },
   );
 }
 
