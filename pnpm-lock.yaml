@@ -24,8 +24,8 @@ dependencies:
     specifier: ^2.2.6
     version: 2.2.6
   toucan-js:
-    specifier: ^3.2.2
-    version: 3.2.2
+    specifier: ^3.3.0
+    version: 3.3.0
   tweet-truncator:
     specifier: ^3.0.1
     version: 3.0.1
@@ -604,35 +604,35 @@ packages:
       - encoding
     dev: false
 
-  /@sentry/core@7.64.0:
-    resolution: {integrity: sha512-IzmEyl5sNG7NyEFiyFHEHC+sizsZp9MEw1+RJRLX6U5RITvcsEgcajSkHQFafaBPzRrcxZMdm47Cwhl212LXcw==}
+  /@sentry/core@7.70.0:
+    resolution: {integrity: sha512-voUsGVM+jwRp99AQYFnRvr7sVd2tUhIMj1L6F42LtD3vp7t5ZnKp3NpXagtFW2vWzXESfyJUBhM0qI/bFvn7ZA==}
     engines: {node: '>=8'}
     dependencies:
-      '@sentry/types': 7.64.0
-      '@sentry/utils': 7.64.0
+      '@sentry/types': 7.70.0
+      '@sentry/utils': 7.70.0
       tslib: 2.6.2
     dev: false
 
-  /@sentry/integrations@7.64.0:
-    resolution: {integrity: sha512-6gbSGiruOifAmLtXw//Za19GWiL5qugDMEFxSvc5WrBWb+A8UK+foPn3K495OcivLS68AmqAQCUGb+6nlVowwA==}
+  /@sentry/integrations@7.70.0:
+    resolution: {integrity: sha512-ffIEuiElROzl4IpYX0O7vtPaadXVycPtyjq86YTHjd2TUFcYuQTPBm5UjEVE0/sSNNCdfWYxNThU/fVyq93l1g==}
     engines: {node: '>=8'}
     dependencies:
-      '@sentry/types': 7.64.0
-      '@sentry/utils': 7.64.0
+      '@sentry/types': 7.70.0
+      '@sentry/utils': 7.70.0
       localforage: 1.10.0
       tslib: 2.6.2
     dev: false
 
-  /@sentry/types@7.64.0:
-    resolution: {integrity: sha512-LqjQprWXjUFRmzIlUjyA+KL+38elgIYmAeoDrdyNVh8MK5IC1W2Lh1Q87b4yOiZeMiIhIVNBd7Ecoh2rodGrGA==}
+  /@sentry/types@7.70.0:
+    resolution: {integrity: sha512-rY4DqpiDBtXSk4MDNBH3dwWqfPbNBI/9GA7Y5WJSIcObBtfBKp0fzYliHJZD0pgM7d4DPFrDn42K9Iiumgymkw==}
     engines: {node: '>=8'}
     dev: false
 
-  /@sentry/utils@7.64.0:
-    resolution: {integrity: sha512-HRlM1INzK66Gt+F4vCItiwGKAng4gqzCR4C5marsL3qv6SrKH98dQnCGYgXluSWaaa56h97FRQu7TxCk6jkSvQ==}
+  /@sentry/utils@7.70.0:
+    resolution: {integrity: sha512-0cChMH0lsGp+5I3D4wOHWwjFN19HVrGUs7iWTLTO5St3EaVbdeLbI1vFXHxMxvopbwgpeZafbreHw/loIdZKpw==}
     engines: {node: '>=8'}
     dependencies:
-      '@sentry/types': 7.64.0
+      '@sentry/types': 7.70.0
       tslib: 2.6.2
     dev: false
 
@@ -1722,13 +1722,13 @@ packages:
       is-number: 7.0.0
     dev: true
 
-  /toucan-js@3.2.2:
-    resolution: {integrity: sha512-FnUvHOS2bv/mimVCzJYyKo9nRFcz8zaPS4FKZ5XZVykRId3rKqP6+VeEjHgxkPM0WG+MoNUZSCfLbMmyoBfhKA==}
+  /toucan-js@3.3.0:
+    resolution: {integrity: sha512-G3RZpX0SiLXq62UkQQyKuZKkB6yKrnp73Y97lh+cBt/fQLoj9YXJJ5IZ8YZ1Dq5nxGpSale+xpuGfUd4QLKcXA==}
     dependencies:
-      '@sentry/core': 7.64.0
-      '@sentry/integrations': 7.64.0
-      '@sentry/types': 7.64.0
-      '@sentry/utils': 7.64.0
+      '@sentry/core': 7.70.0
+      '@sentry/integrations': 7.70.0
+      '@sentry/types': 7.70.0
+      '@sentry/utils': 7.70.0
     dev: false
 
   /tr46@0.0.3:

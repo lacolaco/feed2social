@@ -93,17 +93,18 @@ if (isDevelopment) {
 export default {
   async scheduled(event: ScheduledEvent, env: Env, ctx: ExecutionContext): Promise<void> {
     const sentry = initSentry(env.SENTRY_DSN, ctx);
-    sentry.startSession();
     sentry.setContext('event', event);
+    const checkInId = sentry.captureCheckIn({ monitorSlug: 'scheduled', status: 'in_progress' });
     ctx.waitUntil(
       execute(env, sentry)
         .catch((e) => {
           console.error(e);
           sentry.captureException(e);
+          sentry.captureCheckIn({ checkInId, monitorSlug: 'scheduled', status: 'error' });
           throw e;
         })
         .finally(() => {
-          sentry.captureSession(true);
+          sentry.captureCheckIn({ checkInId, monitorSlug: 'scheduled', status: 'ok' });
         }),
     );
   },
