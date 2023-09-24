@@ -97,14 +97,14 @@ export default {
     const checkInId = sentry.captureCheckIn({ monitorSlug: 'scheduled', status: 'in_progress' });
     ctx.waitUntil(
       execute(env, sentry)
+        .then(() => {
+          sentry.captureCheckIn({ checkInId, monitorSlug: 'scheduled', status: 'ok' });
+        })
         .catch((e) => {
           console.error(e);
           sentry.captureException(e);
           sentry.captureCheckIn({ checkInId, monitorSlug: 'scheduled', status: 'error' });
           throw e;
-        })
-        .finally(() => {
-          sentry.captureCheckIn({ checkInId, monitorSlug: 'scheduled', status: 'ok' });
         }),
     );
   },
