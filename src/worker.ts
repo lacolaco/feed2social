@@ -94,16 +94,16 @@ export default {
   async scheduled(event: ScheduledEvent, env: Env, ctx: ExecutionContext): Promise<void> {
     const sentry = initSentry(env.SENTRY_DSN, ctx);
     sentry.setContext('event', event);
-    const checkInId = sentry.captureCheckIn({ monitorSlug: 'scheduled', status: 'in_progress' });
+    const checkInId = sentry.captureCheckIn({ monitorSlug: 'scheduled-feed2social', status: 'in_progress' });
     ctx.waitUntil(
       execute(env, sentry)
         .then(() => {
-          sentry.captureCheckIn({ checkInId, monitorSlug: 'scheduled', status: 'ok' });
+          sentry.captureCheckIn({ checkInId, monitorSlug: 'scheduled-feed2social', status: 'ok' });
         })
         .catch((e) => {
           console.error(e);
           sentry.captureException(e);
-          sentry.captureCheckIn({ checkInId, monitorSlug: 'scheduled', status: 'error' });
+          sentry.captureCheckIn({ checkInId, monitorSlug: 'scheduled-feed2social', status: 'error' });
           throw e;
         }),
     );
