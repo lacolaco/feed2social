@@ -95,16 +95,15 @@ export default {
     const sentry = initSentry(env.SENTRY_DSN, ctx);
     sentry.setContext('event', event);
     const checkInId = sentry.captureCheckIn({ monitorSlug: 'scheduled-feed2social', status: 'in_progress' });
-    const now = Date.now();
     ctx.waitUntil(
       execute(env, sentry)
         .then(() => {
-          sentry.captureCheckIn({ checkInId, monitorSlug: 'scheduled-feed2social', status: 'ok', duration: Date.now() - now });
+          sentry.captureCheckIn({ checkInId, monitorSlug: 'scheduled-feed2social', status: 'ok' });
         })
         .catch((e) => {
           console.error(e);
           sentry.captureException(e);
-          sentry.captureCheckIn({ checkInId, monitorSlug: 'scheduled-feed2social', status: 'error', duration: Date.now() - now });
+          sentry.captureCheckIn({ checkInId, monitorSlug: 'scheduled-feed2social', status: 'error' });
           throw e;
         }),
     );
