@@ -1,7 +1,13 @@
 import { load } from 'cheerio';
 
 export async function fetchPageTitle(url: string): Promise<string> {
-  const resp = await fetch(url, { headers: { accept: 'text/html', 'user-agent': 'feed2social' } });
+  const resp = await fetch(url, {
+    headers: {
+      'user-agent': 'feed2social',
+      accept: 'text/html',
+      'accept-charset': 'utf-8',
+    },
+  });
   const html = await resp.text();
   const $ = load(html);
   // search title from og:title
