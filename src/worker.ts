@@ -25,7 +25,7 @@ export type Env = {
 const isDevelopment = process.env.NODE_ENV === 'development';
 
 async function createPost(req: CreatePostReq, env: Env) {
-  const res = await env.xenon.fetch('https://xenon-worker.lacolaco.workers.dev/posts/create', {
+  const res = await env.xenon.fetch('https://feed2social.lacolaco.workers.dev/posts/create', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(req),
