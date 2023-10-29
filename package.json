@@ -24,7 +24,7 @@
     "@atproto/api": "^0.6.4",
     "@notionhq/client": "^2.2.11",
     "cheerio": "1.0.0-rc.12",
-    "crypto-js": "^4.1.1",
+    "crypto-js": "^4.2.0",
     "hono": "^3.4.3",
     "oauth-1.0a": "^2.2.6",
     "toucan-js": "^3.3.0",
