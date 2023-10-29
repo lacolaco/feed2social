@@ -19,7 +19,6 @@ export type Env = {
   TWITTER_API_SECRET: string;
   TWITTER_ACCESS_TOKEN: string;
   TWITTER_ACCESS_SECRET: string;
-  xenon: Fetcher;
 };
 
 const isDevelopment = process.env.NODE_ENV === 'development';
