@@ -13,3 +13,4 @@ crons = ["*/5 * * * *"]
 BSKY_ID = "lacolaco.bsky.social"
 NOTION_DATABASE_ID = "bce0d0a9147e468ca227788ca1797d28"
 SENTRY_DSN = "https://2037e01514d53cf9de52433a5d5d5626@o4505734726549504.ingest.sentry.io/4505734743523328"
+SENTRY_RELEASE = "${SENTRY_RELEASE}"

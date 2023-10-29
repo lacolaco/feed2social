@@ -9,6 +9,7 @@ import { TwitterPostSender } from './social/twitter';
 
 export type Env = {
   SENTRY_DSN: string;
+  SENTRY_RELEASE: string;
   NOTION_TOKEN: string;
   NOTION_DATABASE_ID: string;
   MISSKEY_TOKEN: string;
@@ -74,7 +75,7 @@ const app = new Hono<{ Bindings: Env }>();
 if (isDevelopment) {
   // for debugging
   app.get('/_/execute', async (c) => {
-    const sentry = initSentry(c.env.SENTRY_DSN, c.executionCtx);
+    const sentry = initSentry(c.env.SENTRY_DSN, c.env.SENTRY_RELEASE, c.executionCtx);
     const url = new URL(c.req.url);
     console.log(`triggered by fetch at ${url.toString()}`);
     try {
@@ -92,7 +93,7 @@ if (isDevelopment) {
 
 export default {
   async scheduled(event: ScheduledEvent, env: Env, ctx: ExecutionContext): Promise<void> {
-    const sentry = initSentry(env.SENTRY_DSN, ctx);
+    const sentry = initSentry(env.SENTRY_DSN, env.SENTRY_RELEASE, ctx);
     sentry.setContext('event', event);
     const checkInId = sentry.captureCheckIn({ monitorSlug: 'scheduled-feed2social', status: 'in_progress' });
     ctx.waitUntil(

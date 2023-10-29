@@ -22,6 +22,8 @@ jobs:
           node-version-file: 'package.json'
       - run: corepack enable
       - run: pnpm install
+      - name: Replace "${SENTRY_RELEASE}" in wrangler.yaml with the current commit hash
+        run: sed -i "s/\${SENTRY_RELEASE}/${{ github.sha }}/g" wrangler.yaml
       - run: pnpm run deploy
         env:
           CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
@@ -34,3 +36,4 @@ jobs:
           SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
         with:
           environment: production
+          version: ${{ github.sha }}
