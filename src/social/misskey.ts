@@ -14,11 +14,4 @@ export class MisskeyPostSender implements SocialPostSender {
       body: JSON.stringify({ text, i: this.token }),
     });
   }
-
-  buildPost(item: FeedItem) {
-    return {
-      distribution: 'misskey' as const,
-      text: `${item.note ?? '🔖'} "${item.title}" ${item.url} #laco_feed`,
-    };
-  }
 }
