@@ -1,7 +1,7 @@
 import { Client as NotionClient } from '@notionhq/client';
 import { Hono } from 'hono';
-import { FeedItem, SocialPostSender } from './models';
-import { initSentry, Sentry } from './observability/sentry';
+import { CreatePostReq, FeedItem, SocialPostSender } from './models';
+import { Sentry, initSentry } from './observability/sentry';
 import { fetchNewFeedItems, markFeedItemAsProcessed } from './repository';
 import { BlueskyPostSender } from './social/bluesky';
 import { MisskeyPostSender } from './social/misskey';
@@ -23,6 +23,17 @@ export type Env = {
 };
 
 const isDevelopment = process.env.NODE_ENV === 'development';
+
+async function createPost(req: CreatePostReq, env: Env) {
+  const res = await env.xenon.fetch('/posts/create', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(req),
+  });
+  if (!res.ok) {
+    throw new Error(`failed to create post: ${res.status} ${await res.text()}`);
+  }
+}
 
 async function execute(env: Env, sentry: Sentry) {
   const notion = new NotionClient({ auth: env.NOTION_TOKEN });
@@ -50,20 +61,16 @@ async function execute(env: Env, sentry: Sentry) {
 
   sentry.addBreadcrumb({ level: 'log', message: 'posting feed items to social' });
 
-  try {
-    for (const item of newItems) {
-      sentry.addBreadcrumb({ level: 'log', message: 'posting feed item to social', data: item });
-      console.log(`posting: ${item.title}`);
+  const req: CreatePostReq = { data: [] };
 
-      const results = await Promise.allSettled(postSenders.map((sender) => sender.sendPost(item)));
-      // always mark as processed even if failed to post to prevent infinite retry
-      await markFeedItemAsProcessed(notion, item);
-      for (const result of results) {
-        if (result.status === 'rejected') {
-          throw result.reason;
-        }
-      }
-    }
+  for (const item of newItems) {
+    req.data.push(...postSenders.map((sender) => sender.buildPost(item)));
+    await markFeedItemAsProcessed(notion, item);
+  }
+
+  try {
+    sentry.addBreadcrumb({ level: 'log', message: 'posting feed item to social' });
+    await createPost(req, env);
   } catch (e) {
     throw new Error(`failed to post feed items to social: ${e}`);
   }

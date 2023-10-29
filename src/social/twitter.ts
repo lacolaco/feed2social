@@ -44,9 +44,16 @@ export class TwitterPostSender implements SocialPostSender {
       body: JSON.stringify(body),
     });
   }
+
+  buildPost(item: FeedItem) {
+    return {
+      distribution: 'twitter' as const,
+      text: buildText(item),
+    };
+  }
 }
 
-function buildText(item: FeedItem) {
+export function buildText(item: FeedItem) {
   return truncate(
     { desc: item.note ?? '', title: item.title, url: item.url, tags: ['laco_feed'] },
     { defaultPrefix: '🔖', template: '%desc% "%title%" %url% %tags%', truncatedOrder: ['title', 'desc'] },

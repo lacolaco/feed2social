@@ -18,4 +18,11 @@ export class BlueskyPostSender implements SocialPostSender {
 
     await bsky.post({ text: rt.text, facets: rt.facets });
   }
+
+  buildPost(item: FeedItem) {
+    return {
+      distribution: 'bluesky' as const,
+      text: `${item.note ?? '🔖'} "${item.title}" ${item.url}`,
+    };
+  }
 }
