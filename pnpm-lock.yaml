@@ -6,8 +6,8 @@ settings:
 
 dependencies:
   '@atproto/api':
-    specifier: ^0.6.4
-    version: 0.6.4
+    specifier: ^0.12.0
+    version: 0.12.0
   '@notionhq/client':
     specifier: ^2.2.11
     version: 2.2.11
@@ -52,18 +52,19 @@ devDependencies:
 
 packages:
 
-  /@atproto/api@0.6.4:
-    resolution: {integrity: sha512-h12ybc9PlNnlxJi73RRb3tpQ2pCDzUSOrferuNAXj5XRCB6F+rrxKOmqq5A48L8WwnJIoYrfb2xLNc4PL6iVQg==}
+  /@atproto/api@0.12.0:
+    resolution: {integrity: sha512-nSWiad1Z6IC/oVFSVxD5gZLhkD+J4EW2CFqAqIhklJNc0cjFKdmf8D56Pac6Ktm1sJoM6TVZ8GEeuEG6bJS/aQ==}
     dependencies:
-      '@atproto/common-web': 0.2.0
-      '@atproto/uri': 0.1.0
-      '@atproto/xrpc': 0.2.0
+      '@atproto/common-web': 0.3.0
+      '@atproto/lexicon': 0.4.0
+      '@atproto/syntax': 0.3.0
+      '@atproto/xrpc': 0.5.0
+      multiformats: 9.9.0
       tlds: 1.242.0
-      typed-emitter: 2.1.0
     dev: false
 
-  /@atproto/common-web@0.2.0:
-    resolution: {integrity: sha512-ugKrT8CWf6PDsZ29VOhOCs5K4z9BAFIV7SxPXA+MHC7pINqQ+wyjIq+DtUI8kmUSce1dTqc/lMN1akf/W5whVQ==}
+  /@atproto/common-web@0.3.0:
+    resolution: {integrity: sha512-67VnV6JJyX+ZWyjV7xFQMypAgDmjVaR9ZCuU/QW+mqlqI7fex2uL4Fv+7/jHadgzhuJHVd6OHOvNn0wR5WZYtA==}
     dependencies:
       graphemer: 1.4.0
       multiformats: 9.9.0
@@ -71,39 +72,24 @@ packages:
       zod: 3.22.2
     dev: false
 
-  /@atproto/identifier@0.2.0:
-    resolution: {integrity: sha512-5zzlozQEWPMDzyl0D0zSpuNbnc1gtBg/Ov5wbcfieZzbjxgJ/eJHXEBlmxNE1uN91QqpGX5FCEE36jX8tKl9Ag==}
+  /@atproto/lexicon@0.4.0:
+    resolution: {integrity: sha512-RvCBKdSI4M8qWm5uTNz1z3R2yIvIhmOsMuleOj8YR6BwRD+QbtUBy3l+xQ7iXf4M5fdfJFxaUNa6Ty0iRwdKqQ==}
     dependencies:
-      '@atproto/common-web': 0.2.0
-    dev: false
-
-  /@atproto/lexicon@0.2.0:
-    resolution: {integrity: sha512-0OpLZ4o4pbRj2e19h2fO69781wPmL0S8WJaXey3y9FLjV19lj18IEbnlE/OQG8qZNDyGmgezs00L/o7qNCJorw==}
-    dependencies:
-      '@atproto/common-web': 0.2.0
-      '@atproto/identifier': 0.2.0
-      '@atproto/nsid': 0.1.0
-      '@atproto/uri': 0.1.0
+      '@atproto/common-web': 0.3.0
+      '@atproto/syntax': 0.3.0
       iso-datestring-validator: 2.2.2
       multiformats: 9.9.0
       zod: 3.22.2
     dev: false
 
-  /@atproto/nsid@0.1.0:
-    resolution: {integrity: sha512-Pp+tHrGtPVHUi3ainR5yPgHbuqxrZrT0vAMbsNonL+NpWRB82szZSWNThPAgUz4v73Fav6y0WcTIXHzRv2D2Yg==}
+  /@atproto/syntax@0.3.0:
+    resolution: {integrity: sha512-Weq0ZBxffGHDXHl9U7BQc2BFJi/e23AL+k+i5+D9hUq/bzT4yjGsrCejkjq0xt82xXDjmhhvQSZ0LqxyZ5woxA==}
     dev: false
 
-  /@atproto/uri@0.1.0:
-    resolution: {integrity: sha512-ZaiOYHsakB98HrXfqiF6m7xgahSn9yXxKnPm0EaN0Breax6jtTl+lblWtduonAmyWVLJJAQJbvF+ud0i/3+wBw==}
+  /@atproto/xrpc@0.5.0:
+    resolution: {integrity: sha512-swu+wyOLvYW4l3n+VAuJbHcPcES+tin2Lsrp8Bw5aIXIICiuFn1YMFlwK9JwVUzTH21Py1s1nHEjr4CJeElJog==}
     dependencies:
-      '@atproto/identifier': 0.2.0
-      '@atproto/nsid': 0.1.0
-    dev: false
-
-  /@atproto/xrpc@0.2.0:
-    resolution: {integrity: sha512-xsyJDPG0aVfNmBvjvVkjD4YdETCkOC/xhW+4BIzKucKIH8YftcE78ANZg5rdfXjIAnsQNPP2nDf13EKcfFHpKw==}
-    dependencies:
-      '@atproto/lexicon': 0.2.0
+      '@atproto/lexicon': 0.4.0
       zod: 3.22.2
     dev: false
 
@@ -1560,14 +1546,6 @@ packages:
       fsevents: 2.3.2
     dev: true
 
-  /rxjs@7.8.1:
-    resolution: {integrity: sha512-AA3TVj+0A2iuIoQkWEK/tqFjBq2j+6PO6Y0zJcvzLAFhEFIO3HL0vls9hWLncZbAAbK0mar7oZ4V079I/qPMxg==}
-    requiresBuild: true
-    dependencies:
-      tslib: 2.6.2
-    dev: false
-    optional: true
-
   /safe-buffer@5.2.1:
     resolution: {integrity: sha512-rp3So07KcdmmKbGvgaNxQSJr7bGVSVk5S9Eq1F+ppbRo70+YeaDxkw5Dd8NPN+GD6bjnYm2VuPuCXmpuYvmCXQ==}
     dev: true
@@ -1770,12 +1748,6 @@ packages:
     resolution: {integrity: sha512-0fr/mIH1dlO+x7TlcMy+bIDqKPsw/70tVyeHW787goQjhmqaZe10uwLujubK9q9Lg6Fiho1KUKDYz0Z7k7g5/g==}
     engines: {node: '>=4'}
     dev: true
-
-  /typed-emitter@2.1.0:
-    resolution: {integrity: sha512-g/KzbYKbH5C2vPkaXGu8DJlHrGKHLsM25Zg9WuC9pMGfuvT+X25tZQWo5fK1BjBm8+UrVE9LDCvaY0CQk+fXDA==}
-    optionalDependencies:
-      rxjs: 7.8.1
-    dev: false
 
   /typescript@5.1.6:
     resolution: {integrity: sha512-zaWCozRZ6DLEWAWFrVDz1H6FVXzUSfTy5FUMWsQlU8Ym5JP9eO4xkTIROFCQvhQf61z6O/G6ugw3SgAnvvm+HA==}
