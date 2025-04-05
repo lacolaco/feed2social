@@ -31,7 +31,7 @@ async function execute(env: Env, sentry: Sentry) {
     new BlueskyAdapter(env.BSKY_ID, env.BSKY_PASSWORD),
     new TwitterAdapter(env.TWITTER_API_KEY, env.TWITTER_API_SECRET, env.TWITTER_ACCESS_TOKEN, env.TWITTER_ACCESS_SECRET),
   ];
-
+  console.log('release:', env.SENTRY_RELEASE);
   sentry.addBreadcrumb({ level: 'log', message: 'fetching new feed items' });
 
   let incomingFeedItems: FeedItem[] = [];
