@@ -2,6 +2,9 @@ compatibility_date = "2023-05-15"
 main = "src/worker.ts"
 name = "feed2social"
 
+[observability.logs]
+enabled = true
+
 # Cron Triggers
 # Docs: https://developers.cloudflare.com/workers/platform/triggers/cron-triggers/
 # Configuration: https://developers.cloudflare.com/workers/wrangler/configuration/#triggers
