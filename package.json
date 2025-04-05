@@ -20,7 +20,7 @@
     "prettier": "^3.0.2",
     "typescript": "^5.1.6",
     "vitest": "^3.0.0",
-    "wrangler": "^3.5.1"
+    "wrangler": "^4.0.0"
   },
   "dependencies": {
     "@atproto/api": "^0.14.0",
