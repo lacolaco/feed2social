@@ -11,11 +11,15 @@ export async function fetchNewFeedItems(notion: NotionClient, notionDatabaseId: 
     sorts: [{ timestamp: 'created_time', direction: 'descending' }],
     filter: {
       and: [
+        // 前週以前のものは除外
         { timestamp: 'created_time', created_time: { this_week: {} } },
+        // URLが空のものは除外
         { property: 'url', url: { is_not_empty: true } },
+        // feed2socialがtrueのものは除外
+        { property: 'feed2social', checkbox: { does_not_equal: true } },
+        // feed2social_completedがmisskey, bluesky, twitterのいずれかを含まないもの
         {
           or: [
-            { property: 'feed2social', checkbox: { equals: false } },
             { property: 'feed2social_completed', multi_select: { does_not_contain: 'misskey', } },
             { property: 'feed2social_completed', multi_select: { does_not_contain: 'bluesky' } },
             { property: 'feed2social_completed', multi_select: { does_not_contain: 'twitter' } },
