@@ -16,7 +16,7 @@ dependencies:
     version: 1.0.0-rc.12
   crypto-js:
     specifier: ^4.1.1
-    version: 4.1.1
+    version: 4.2.0
   hono:
     specifier: ^3.4.3
     version: 3.4.3
@@ -882,8 +882,8 @@ packages:
     requiresBuild: true
     dev: false
 
-  /crypto-js@4.1.1:
-    resolution: {integrity: sha512-o2JlM7ydqd3Qk9CA0L4NL6mTzU2sdx96a+oOfPu8Mkl/PK51vSyoi8/rQ8NknZtk44vq15lmhAj9CIAGwgeWKw==}
+  /crypto-js@4.2.0:
+    resolution: {integrity: sha512-KALDyEYgpY+Rlob/iriUtjV6d5Eq+Y191A5g4UqLAi8CyGP9N1+FdVbkc1SxKc2r4YAYqG8JzO2KGL+AizD70Q==}
     dev: false
 
   /css-select@5.1.0:
