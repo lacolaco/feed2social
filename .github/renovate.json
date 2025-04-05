@@ -4,9 +4,9 @@
   "dependencyDashboard": true,
   "packageRules": [
     {
-      "matchPackagePatterns": ["^@types/"],
       "matchUpdateTypes": ["minor", "patch"],
-      "automerge": true
+      "automerge": true,
+      "matchPackageNames": ["/^@types//"]
     }
   ]
 }
