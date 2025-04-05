@@ -18,8 +18,8 @@ dependencies:
     specifier: ^4.1.1
     version: 4.1.1
   hono:
-    specifier: ^3.4.3
-    version: 3.4.3
+    specifier: ^4.0.0
+    version: 4.7.5
   oauth-1.0a:
     specifier: ^2.2.6
     version: 2.2.6
@@ -1274,9 +1274,9 @@ packages:
     resolution: {integrity: sha512-EtKwoO6kxCL9WO5xipiHTZlSzBm7WLT627TqC/uVRd0HKmq8NXyebnNYxDoBi7wt8eTWrUrKXCOVaFq9x1kgag==}
     dev: false
 
-  /hono@3.4.3:
-    resolution: {integrity: sha512-HbVxZh9yC3hV25+mFjUaM65t7g8ia2mXbhAGmVHA0r8+guizTJq1Cg4f2SmB5+JrviG0vaqOnWJ9U3O05aikbA==}
-    engines: {node: '>=16.0.0'}
+  /hono@4.7.5:
+    resolution: {integrity: sha512-fDOK5W2C1vZACsgLONigdZTRZxuBqFtcKh7bUQ5cVSbwI2RWjloJDcgFOVzbQrlI6pCmhlTsVYZ7zpLj4m4qMQ==}
+    engines: {node: '>=16.9.0'}
     dev: false
 
   /htmlparser2@8.0.2:
