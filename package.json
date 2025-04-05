@@ -29,7 +29,7 @@
     "crypto-js": "^4.1.1",
     "hono": "^4.0.0",
     "oauth-1.0a": "^2.2.6",
-    "toucan-js": "^3.3.0",
+    "toucan-js": "^4.0.0",
     "tweet-truncator": "^3.0.1"
   }
 }
