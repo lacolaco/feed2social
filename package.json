@@ -23,7 +23,7 @@
     "wrangler": "^3.5.1"
   },
   "dependencies": {
-    "@atproto/api": "^0.6.4",
+    "@atproto/api": "^0.14.0",
     "@notionhq/client": "^2.2.11",
     "cheerio": "1.0.0-rc.12",
     "crypto-js": "^4.1.1",
