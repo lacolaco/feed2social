@@ -16,7 +16,7 @@ export async function fetchNewFeedItems(notion: NotionClient, notionDatabaseId: 
         {
           or: [
             { property: 'feed2social', checkbox: { equals: false } },
-            { property: 'feed2social_completed', multi_select: { does_not_contain: 'misskey' } },
+            { property: 'feed2social_completed', multi_select: { does_not_contain: 'misskey', } },
             { property: 'feed2social_completed', multi_select: { does_not_contain: 'bluesky' } },
             { property: 'feed2social_completed', multi_select: { does_not_contain: 'twitter' } },
           ],

@@ -56,8 +56,11 @@ async function execute(env: Env, sentry: Sentry) {
       console.log(`posting: ${feedItem.feedUrl} (${feedItem.notionPageId})`);
 
       const networks = allNetworkAdapters.filter((network) => !feedItem.completedNetworkKeys.has(network.getNetworkKey()));
+      console.log(`posted to ${networks.map((network) => network.getNetworkKey()).join(', ')}`);
 
       const post = await createPostData(feedItem);
+      console.log(`post data: ${JSON.stringify(post, null, 2)}`);
+
       const results = await Promise.allSettled(
         networks.map(async (network) => {
           // await network.createPost(post);
