@@ -6,7 +6,9 @@
     "deploy": "wrangler deploy",
     "start": "NODE_ENV=development wrangler dev --test-scheduled",
     "format": "prettier --cache --write \"./**/*.{ts,js,json,md}\"",
-    "test": "vitest"
+    "test": "vitest",
+    "test:ci": "vitest run",
+    "lint": "prettier --check \"./**/*.{ts,js,json,md}\""
   },
   "engines": {
     "node": "^18.16.0"
