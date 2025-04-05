@@ -53,7 +53,7 @@ async function execute(env: Env, sentry: Sentry) {
   try {
     for (const feedItem of incomingFeedItems) {
       sentry.addBreadcrumb({ level: 'log', message: 'posting feed item to social', data: feedItem });
-      console.log(`posting: ${feedItem.feedUrl} (${feedItem.notionPageId})`);
+      console.log(`posting: ${JSON.stringify(feedItem, null, 2)}`);
 
       const networks = allNetworkAdapters.filter((network) => !feedItem.completedNetworkKeys.has(network.getNetworkKey()));
       console.log(`posted to ${networks.map((network) => network.getNetworkKey()).join(', ')}`);
