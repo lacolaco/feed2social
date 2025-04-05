@@ -60,7 +60,7 @@ async function execute(env: Env, sentry: Sentry) {
       const post = await createPostData(feedItem);
       const results = await Promise.allSettled(
         networks.map(async (network) => {
-          await network.createPost(post);
+          // await network.createPost(post);
           return { network: network.getNetworkKey(), status: 'ok' };
         }),
       );
