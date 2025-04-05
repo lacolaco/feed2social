@@ -1,11 +1,12 @@
 import { Client as NotionClient } from '@notionhq/client';
-import { Hono } from 'hono';
-import { FeedItem, SocialPostSender } from './models';
+import { ExecutionContext, Hono } from 'hono';
+import { createPostData } from './create-post';
+import { FeedItem, SocialNetworkAdapter } from './models';
 import { initSentry, Sentry } from './observability/sentry';
-import { fetchNewFeedItems, markFeedItemAsProcessed } from './repository';
-import { BlueskyPostSender } from './social/bluesky';
-import { MisskeyPostSender } from './social/misskey';
-import { TwitterPostSender } from './social/twitter';
+import { fetchNewFeedItems, saveFeedItemStatus } from './repository';
+import { BlueskyAdapter } from './social/bluesky';
+import { MisskeyAdapter } from './social/misskey';
+import { TwitterAdapter } from './social/twitter';
 
 export type Env = {
   SENTRY_DSN: string;
@@ -25,24 +26,24 @@ const isDevelopment = process.env.NODE_ENV === 'development';
 
 async function execute(env: Env, sentry: Sentry) {
   const notion = new NotionClient({ auth: env.NOTION_TOKEN });
-  const postSenders: SocialPostSender[] = [
-    new MisskeyPostSender(env.MISSKEY_TOKEN),
-    new BlueskyPostSender(env.BSKY_ID, env.BSKY_PASSWORD),
-    new TwitterPostSender(env.TWITTER_API_KEY, env.TWITTER_API_SECRET, env.TWITTER_ACCESS_TOKEN, env.TWITTER_ACCESS_SECRET),
+  const allNetworkAdapters: SocialNetworkAdapter[] = [
+    new MisskeyAdapter(env.MISSKEY_TOKEN),
+    new BlueskyAdapter(env.BSKY_ID, env.BSKY_PASSWORD),
+    new TwitterAdapter(env.TWITTER_API_KEY, env.TWITTER_API_SECRET, env.TWITTER_ACCESS_TOKEN, env.TWITTER_ACCESS_SECRET),
   ];
 
   sentry.addBreadcrumb({ level: 'log', message: 'fetching new feed items' });
 
-  let newItems: FeedItem[] = [];
+  let incomingFeedItems: FeedItem[] = [];
   try {
-    newItems = await fetchNewFeedItems(notion, env.NOTION_DATABASE_ID);
-    console.log(`new items: ${newItems.length}`);
+    incomingFeedItems = await fetchNewFeedItems(notion, env.NOTION_DATABASE_ID);
+    console.log(`new items: ${incomingFeedItems.length}`);
   } catch (e) {
     throw new Error(`failed to fetch new feed items: ${e}`);
   }
 
   if (isDevelopment) {
-    console.log(JSON.stringify(newItems, null, 2));
+    console.log(JSON.stringify(incomingFeedItems, null, 2));
     console.log('skipped posting to social because of development mode');
     return;
   }
@@ -50,18 +51,29 @@ async function execute(env: Env, sentry: Sentry) {
   sentry.addBreadcrumb({ level: 'log', message: 'posting feed items to social' });
 
   try {
-    for (const item of newItems) {
-      sentry.addBreadcrumb({ level: 'log', message: 'posting feed item to social', data: item });
-      console.log(`posting: ${item.title}`);
+    for (const feedItem of incomingFeedItems) {
+      sentry.addBreadcrumb({ level: 'log', message: 'posting feed item to social', data: feedItem });
+      console.log(`posting: ${feedItem.feedUrl} (${feedItem.notionPageId})`);
 
-      const results = await Promise.allSettled(postSenders.map((sender) => sender.sendPost(item)));
-      // always mark as processed even if failed to post to prevent infinite retry
-      await markFeedItemAsProcessed(notion, item);
+      const networks = allNetworkAdapters.filter((network) => !feedItem.completedNetworkKeys.has(network.getNetworkKey()));
+
+      const post = await createPostData(feedItem);
+      const results = await Promise.allSettled(
+        networks.map(async (network) => {
+          await network.createPost(post);
+          return { network: network.getNetworkKey(), status: 'ok' };
+        }),
+      );
       for (const result of results) {
         if (result.status === 'rejected') {
-          throw result.reason;
+          console.error(`failed to post: ${result.reason}`);
+          sentry.captureException(result.reason);
+          continue;
         }
+        const { network } = result.value;
+        feedItem.completedNetworkKeys.add(network);
       }
+      await saveFeedItemStatus(notion, feedItem);
     }
   } catch (e) {
     throw new Error(`failed to post feed items to social: ${e}`);
@@ -94,7 +106,7 @@ if (isDevelopment) {
 export default {
   async scheduled(event: ScheduledEvent, env: Env, ctx: ExecutionContext): Promise<void> {
     const sentry = initSentry(env.SENTRY_DSN, env.SENTRY_RELEASE, ctx);
-    sentry.setContext('event', event);
+    sentry.setContext('event', { cron: event.cron, scheduledTime: event.scheduledTime });
     const checkInId = sentry.captureCheckIn({ monitorSlug: 'scheduled-feed2social', status: 'in_progress' });
     ctx.waitUntil(
       execute(env, sentry)

@@ -1,13 +1,17 @@
-import { FeedItem, SocialPostSender } from '../models';
+import { PostData, SocialNetworkAdapter } from '../models';
 
-export class MisskeyPostSender implements SocialPostSender {
+export class MisskeyAdapter implements SocialNetworkAdapter {
   constructor(private readonly token: string) {}
+
+  getNetworkKey(): string {
+    return 'misskey';
+  }
 
   /**
    * @see https://misskey-hub.net/docs/api/endpoints/notes/create.html
    */
-  async sendPost(item: FeedItem): Promise<void> {
-    const text = `${item.note ?? '🔖'} "${item.title}" ${item.url} #laco_feed`;
+  async createPost(post: PostData): Promise<void> {
+    const text = `${post.note ?? '🔖'} "${post.title}" ${post.url} #laco_feed`;
     await fetch('https://misskey.io/api/notes/create', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

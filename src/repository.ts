@@ -1,6 +1,8 @@
 import { Client as NotionClient, iteratePaginatedAPI } from '@notionhq/client';
+import { PageObjectResponse } from '@notionhq/client/build/src/api-endpoints';
 import { FeedItem } from './models';
-import { fetchPageTitle } from './utils';
+
+type NotionProperty<T extends string> = PageObjectResponse['properties'][string] & { type: T };
 
 export async function fetchNewFeedItems(notion: NotionClient, notionDatabaseId: string): Promise<FeedItem[]> {
   const items: FeedItem[] = [];
@@ -10,8 +12,15 @@ export async function fetchNewFeedItems(notion: NotionClient, notionDatabaseId: 
     filter: {
       and: [
         { timestamp: 'created_time', created_time: { this_week: {} } },
-        { property: 'feed2social', checkbox: { equals: false } },
         { property: 'url', url: { is_not_empty: true } },
+        {
+          or: [
+            { property: 'feed2social', checkbox: { equals: false } },
+            { property: 'feed2social_completed', multi_select: { does_not_contain: 'misskey' } },
+            { property: 'feed2social_completed', multi_select: { does_not_contain: 'bluesky' } },
+            { property: 'feed2social_completed', multi_select: { does_not_contain: 'twitter' } },
+          ],
+        },
       ],
     },
   })) {
@@ -19,42 +28,40 @@ export async function fetchNewFeedItems(notion: NotionClient, notionDatabaseId: 
       console.log(`skipped: ${block.id} is not a page`);
       continue;
     }
-    const { properties } = block;
-    assertType('title', properties.title);
-    assertType('url', properties.url);
+    const properties = block.properties as {
+      title: NotionProperty<'title'>;
+      url: NotionProperty<'url'>;
+      feed2social_completed: NotionProperty<'multi_select'>;
+    };
+    assertPropertyType(properties.title, 'title');
+    assertPropertyType(properties.url, 'url');
+    assertPropertyType(properties.feed2social_completed, 'multi_select');
 
     const url = properties.url.url ?? '';
     if (url === '') {
       console.log(`skipped: ${block.id} has no url`);
       continue;
     }
-    const title = await fetchPageTitle(url);
-    if (title === '') {
-      console.log(`skipped: ${block.id} has no title`);
-      continue;
-    }
-    const notionTitle = properties.title.title.map((t) => t.plain_text).join('');
-    // title and notionTitle must be different
-    const note = !title.includes(notionTitle) && !notionTitle.includes(title) ? notionTitle : undefined;
+    const notionPageTitle = properties.title.title.map((t) => t.plain_text).join('');
+    const completedNetworkKeys = new Set(properties.feed2social_completed.multi_select.map((s) => s.name));
 
-    items.push({ notionBlockId: block.id, title, url, note });
+    items.push({ notionPageId: block.id, notionPageTitle, feedUrl: url, completedNetworkKeys });
   }
-
   return items;
 }
 
-export async function markFeedItemAsProcessed(notion: NotionClient, item: FeedItem) {
+export async function saveFeedItemStatus(notion: NotionClient, item: FeedItem) {
   return await notion.pages.update({
-    page_id: item.notionBlockId,
+    page_id: item.notionPageId,
     properties: {
-      title: { title: [{ type: 'text', text: { content: item.title } }] },
-      note: { rich_text: item.note ? [{ type: 'text', text: { content: item.note } }] : [] },
-      feed2social: { checkbox: true },
+      feed2social_completed: {
+        multi_select: Array.from(item.completedNetworkKeys).map((key) => ({ name: key })),
+      },
     },
   });
 }
 
-function assertType<T extends string>(type: T, obj: { type: string }): asserts obj is { type: T } {
+function assertPropertyType<T extends string>(obj: { type: string }, type: T): asserts obj is { type: T } {
   if (obj.type !== type) {
     throw new Error(`unexpected type: ${obj.type}`);
   }

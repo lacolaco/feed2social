@@ -1,10 +1,17 @@
 export type FeedItem = {
-  notionBlockId: string;
-  title: string;
-  url: string;
-  note?: string;
+  notionPageId: string;
+  notionPageTitle: string;
+  completedNetworkKeys: Set<string>;
+  feedUrl: string;
 };
 
-export interface SocialPostSender {
-  sendPost(item: FeedItem): Promise<void>;
+export type PostData = {
+  title: string;
+  url: string;
+  note: string | null;
+};
+
+export interface SocialNetworkAdapter {
+  getNetworkKey(): string;
+  createPost(post: PostData): Promise<void>;
 }

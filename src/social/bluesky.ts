@@ -1,21 +1,30 @@
-import { BskyAgent, RichText } from '@atproto/api';
-import { FeedItem, SocialPostSender } from '../models';
+import { AtpAgent, RichText } from '@atproto/api';
+import { PostData, SocialNetworkAdapter } from '../models';
 
-const bsky = new BskyAgent({ service: 'https://bsky.social' });
+const bsky = new AtpAgent({ service: 'https://bsky.social' });
 
-export class BlueskyPostSender implements SocialPostSender {
+export class BlueskyAdapter implements SocialNetworkAdapter {
   constructor(
     private readonly id: string,
     private readonly password: string,
   ) {}
 
-  async sendPost(item: FeedItem): Promise<void> {
-    await bsky.login({ identifier: this.id, password: this.password });
+  getNetworkKey(): string {
+    return 'bluesky';
+  }
 
-    const text = `${item.note ?? '🔖'} "${item.title}" ${item.url}`;
-    const rt = new RichText({ text });
-    await rt.detectFacets(bsky);
+  async createPost(post: PostData): Promise<void> {
+    try {
+      await bsky.login({ identifier: this.id, password: this.password });
 
-    await bsky.post({ text: rt.text, facets: rt.facets });
+      const text = `${post.note ?? '🔖'} "${post.title}" ${post.url}`;
+      const rt = new RichText({ text });
+      await rt.detectFacets(bsky);
+
+      await bsky.post({ text: rt.text, facets: rt.facets });
+    } catch (error) {
+      console.error('Error posting to Bluesky:', error);
+      throw new Error(`failed to post to Bluesky`, { cause: error });
+    }
   }
 }

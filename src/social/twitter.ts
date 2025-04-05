@@ -2,9 +2,9 @@ import encBase64 from 'crypto-js/enc-base64';
 import hmacSha1 from 'crypto-js/hmac-sha1';
 import OAuth from 'oauth-1.0a';
 import { truncate } from 'tweet-truncator';
-import { FeedItem, SocialPostSender } from '../models';
+import { PostData, SocialNetworkAdapter } from '../models';
 
-export class TwitterPostSender implements SocialPostSender {
+export class TwitterAdapter implements SocialNetworkAdapter {
   constructor(
     private readonly consumerKey: string,
     private readonly consumerSecret: string,
@@ -12,11 +12,15 @@ export class TwitterPostSender implements SocialPostSender {
     private readonly accessSecret: string,
   ) {}
 
+  getNetworkKey(): string {
+    return 'twitter';
+  }
+
   /**
    * @see https://developer.twitter.com/en/docs/twitter-api/tweets/manage-tweets/api-reference/post-tweets
    */
-  async sendPost(item: FeedItem): Promise<void> {
-    const text = buildText(item);
+  async createPost(post: PostData): Promise<void> {
+    const text = buildText(post);
 
     const resp = await this.fetchWithAuth('https://api.twitter.com/2/tweets', 'POST', { text });
     if (!resp.ok) {
@@ -46,9 +50,9 @@ export class TwitterPostSender implements SocialPostSender {
   }
 }
 
-function buildText(item: FeedItem) {
+function buildText(post: PostData) {
   return truncate(
-    { desc: item.note ?? '', title: item.title, url: item.url, tags: ['laco_feed'] },
+    { desc: post.note ?? '', title: post.title, url: post.url, tags: ['laco_feed'] },
     { defaultPrefix: '🔖', template: '%desc% "%title%" %url% %tags%', truncatedOrder: ['title', 'desc'] },
   );
 }
@@ -59,16 +63,15 @@ if (import.meta.vitest) {
   describe('buildText', () => {
     it('without note', () => {
       const text = buildText({
-        notionBlockId: 'blockId',
         url: 'https://example.com',
         title: 'example',
+        note: null,
       });
       expect(text).toBe('🔖 "example" https://example.com #laco_feed');
     });
 
     it('with note', () => {
       const text = buildText({
-        notionBlockId: 'blockId',
         url: 'https://example.com',
         title: 'example',
         note: 'note',

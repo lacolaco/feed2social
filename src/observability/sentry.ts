@@ -1,4 +1,5 @@
-import { Toucan, Transaction } from 'toucan-js';
+import { ExecutionContext } from 'hono';
+import { Toucan } from 'toucan-js';
 
 export type Sentry = Toucan;
 
@@ -8,7 +9,6 @@ export function initSentry(dsn: string, release: string, context: ExecutionConte
     context,
     environment: process.env.NODE_ENV ?? 'production',
     release,
-    integrations: [new Transaction()],
   });
   return sentry;
 }
