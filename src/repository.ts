@@ -20,7 +20,7 @@ export async function fetchNewFeedItems(notion: NotionClient, notionDatabaseId: 
         // feed2social_completedがmisskey, bluesky, twitterのいずれかを含まないもの
         {
           or: [
-            { property: 'feed2social_completed', multi_select: { does_not_contain: 'misskey', } },
+            { property: 'feed2social_completed', multi_select: { does_not_contain: 'misskey' } },
             { property: 'feed2social_completed', multi_select: { does_not_contain: 'bluesky' } },
             { property: 'feed2social_completed', multi_select: { does_not_contain: 'twitter' } },
           ],

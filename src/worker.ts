@@ -42,12 +42,6 @@ async function execute(env: Env, sentry: Sentry) {
     throw new Error(`failed to fetch new feed items: ${e}`);
   }
 
-  if (isDevelopment) {
-    console.log(JSON.stringify(incomingFeedItems, null, 2));
-    console.log('skipped posting to social because of development mode');
-    return;
-  }
-
   sentry.addBreadcrumb({ level: 'log', message: 'posting feed items to social' });
 
   try {
@@ -63,7 +57,11 @@ async function execute(env: Env, sentry: Sentry) {
 
       const results = await Promise.allSettled(
         networks.map(async (network) => {
-          // await network.createPost(post);
+          if (isDevelopment) {
+            console.log('skipped posting in development mode');
+          } else {
+            await network.createPost(post);
+          }
           return { network: network.getNetworkKey(), status: 'ok' };
         }),
       );
