@@ -5,10 +5,10 @@
   "scripts": {
     "deploy": "wrangler deploy",
     "start": "NODE_ENV=development wrangler dev --test-scheduled",
-    "format": "prettier --cache --write \"./**/*.{ts,js,json,md}\"",
+    "format": "prettier --cache --write \"./**/*.{ts,js,json}\"",
     "test": "vitest",
     "test:ci": "vitest run",
-    "lint": "prettier --check \"./**/*.{ts,js,json,md}\""
+    "lint": "prettier --check \"./**/*.{ts,js,json}\""
   },
   "engines": {
     "node": "^22.0.0"
