@@ -89,7 +89,8 @@ export function decodeHtmlBytes(bytes: Uint8Array, response: Response): string {
     // encoding-japaneseは配列として処理
     const byteArray = Array.from(bytes);
     const autoDetectedEncoding = Encoding.detect(byteArray);
-    const finalCharset = autoDetectedEncoding || encodingCharset || 'UTF8';
+    // 明示的指定 → 自動検出 → デフォルトの優先順位
+    const finalCharset = encodingCharset || autoDetectedEncoding || 'UTF8';
 
     // encoding-japaneseがサポートするエンコーディングの場合のみ変換
     if (finalCharset) {
@@ -117,7 +118,14 @@ if (import.meta.vitest) {
 
   describe('encoding module', () => {
     test('should decode Shift-JIS content correctly', () => {
-      const htmlContent = '<title>テストタイトル Shift-JIS</title>';
+      const htmlContent = `
+        <html>
+        <head>
+          <meta http-equiv="Content-Type" content="text/html; charset=Shift_JIS">
+          <title>テストタイトル Shift-JIS</title>
+        </head>
+        </html>
+      `;
 
       // encoding-japaneseを使ってShift-JISエンコード
       const sjisArray = Encoding.convert(Encoding.stringToCode(htmlContent), {
@@ -138,7 +146,14 @@ if (import.meta.vitest) {
     });
 
     test('should decode EUC-JP content correctly', () => {
-      const htmlContent = '<title>テストタイトル EUC-JP</title>';
+      const htmlContent = `
+        <html>
+        <head>
+          <meta http-equiv="Content-Type" content="text/html; charset=EUC-JP">
+          <title>テストタイトル EUC-JP</title>
+        </head>
+        </html>
+      `;
 
       // encoding-japaneseを使ってEUC-JPエンコード
       const eucjpArray = Encoding.convert(Encoding.stringToCode(htmlContent), {

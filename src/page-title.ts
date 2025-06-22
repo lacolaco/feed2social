@@ -178,14 +178,18 @@ if (import.meta.vitest) {
   });
 
   describe('integration tests', () => {
-    test('should fetch actual Japanese page title correctly', async () => {
-      const url = 'https://user.keio.ac.jp/~rhotta/hellog/2025-06-21-1.html';
-      const expectedTitle = '#5899. 「クレイフィッシュ語」？ --- ヘルメイトさんたちによる用語開発';
+    test(
+      'should fetch actual Japanese page title correctly',
+      async () => {
+        const url = 'https://user.keio.ac.jp/~rhotta/hellog/2025-06-21-1.html';
+        const expectedTitle = '#5899. 「クレイフィッシュ語」？ --- ヘルメイトさんたちによる用語開発';
 
-      // 実際のHTTPリクエストでテスト
-      const title = await fetchPageTitle(url);
+        // 実際のHTTPリクエストでテスト
+        const title = await fetchPageTitle(url);
 
-      expect(title).toBe(expectedTitle);
-    }); // タイムアウトを10秒に設定
+        expect(title).toBe(expectedTitle);
+      },
+      10000, // ネットワーク遅延対応のため10秒タイムアウト
+    );
   });
 }
