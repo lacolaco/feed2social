@@ -5,10 +5,10 @@
   "scripts": {
     "deploy": "wrangler deploy",
     "start": "NODE_ENV=development wrangler dev --test-scheduled",
-    "format": "prettier --cache --write \"./**/*.{ts,js,json,md}\"",
+    "format": "prettier --cache --write \"./**/*.{ts,js,json}\"",
     "test": "vitest",
     "test:ci": "vitest run",
-    "lint": "prettier --check \"./**/*.{ts,js,json,md}\""
+    "lint": "prettier --check \"./**/*.{ts,js,json}\""
   },
   "engines": {
     "node": "^22.0.0"
@@ -17,6 +17,7 @@
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20230814.0",
     "@types/crypto-js": "^4.1.1",
+    "@types/encoding-japanese": "^2.2.1",
     "prettier": "^3.0.2",
     "typescript": "^5.1.6",
     "vitest": "^3.0.0",
@@ -25,8 +26,9 @@
   "dependencies": {
     "@atproto/api": "^0.14.0",
     "@notionhq/client": "^2.2.11",
-    "cheerio": "1.0.0",
+    "cheerio": "1.1.0",
     "crypto-js": "^4.1.1",
+    "encoding-japanese": "^2.2.0",
     "hono": "^4.0.0",
     "leven": "^4.0.0",
     "oauth-1.0a": "^2.2.6",

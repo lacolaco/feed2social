@@ -1,6 +1,6 @@
 import leven from 'leven';
 import { FeedItem, PostData } from './models';
-import { fetchPageTitle } from './utils';
+import { fetchPageTitle } from './page-title';
 
 export async function createPostData(item: FeedItem): Promise<PostData> {
   const { notionPageTitle, feedUrl } = item;
