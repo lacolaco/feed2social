@@ -1,6 +1,7 @@
 main = "src/worker.ts"
 name = "feed2social"
 compatibility_date = "2025-04-02"
+compatibility_flags = ["nodejs_compat"]
 
 [observability.logs]
 enabled = true
