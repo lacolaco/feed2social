@@ -1,4 +1,4 @@
-import { Client as NotionClient, iteratePaginatedAPI } from '@notionhq/client';
+import { Client as NotionClient, collectPaginatedAPI } from '@notionhq/client';
 import { PageObjectResponse } from '@notionhq/client/build/src/api-endpoints';
 import { FeedItem } from './models';
 
@@ -6,7 +6,7 @@ type NotionProperty<T extends string> = PageObjectResponse['properties'][string]
 
 export async function fetchNewFeedItems(notion: NotionClient, notionDatabaseId: string): Promise<FeedItem[]> {
   const items: FeedItem[] = [];
-  for await (const block of iteratePaginatedAPI(notion.databases.query, {
+  const pages = await collectPaginatedAPI(notion.databases.query, {
     database_id: notionDatabaseId,
     sorts: [{ timestamp: 'created_time', direction: 'descending' }],
     filter: {
@@ -27,12 +27,13 @@ export async function fetchNewFeedItems(notion: NotionClient, notionDatabaseId: 
         },
       ],
     },
-  })) {
-    if (block.object !== 'page' || !('properties' in block)) {
-      console.log(`skipped: ${block.id} is not a page`);
+  });
+  for (const page of pages) {
+    if (page.object !== 'page' || !('properties' in page)) {
+      console.log(`skipped: ${page.id} is not a page`);
       continue;
     }
-    const properties = block.properties as {
+    const properties = page.properties as {
       title: NotionProperty<'title'>;
       url: NotionProperty<'url'>;
       feed2social_completed: NotionProperty<'multi_select'>;
@@ -43,13 +44,13 @@ export async function fetchNewFeedItems(notion: NotionClient, notionDatabaseId: 
 
     const url = properties.url.url ?? '';
     if (url === '') {
-      console.log(`skipped: ${block.id} has no url`);
+      console.log(`skipped: ${page.id} has no url`);
       continue;
     }
     const notionPageTitle = properties.title.title.map((t) => t.plain_text).join('');
     const completedNetworkKeys = new Set(properties.feed2social_completed.multi_select.map((s) => s.name));
 
-    items.push({ notionPageId: block.id, notionPageTitle, feedUrl: url, completedNetworkKeys });
+    items.push({ notionPageId: page.id, notionPageTitle, feedUrl: url, completedNetworkKeys });
   }
   return items;
 }

@@ -24,14 +24,22 @@ export type Env = {
 
 const isDevelopment = process.env.NODE_ENV === 'development';
 
-async function execute(env: Env, sentry: Sentry) {
-  const notion = new NotionClient({ auth: env.NOTION_TOKEN });
+async function execute(env: Env, sentry: Sentry, dryRun = false) {
+  // Bind fetch to globalThis to avoid Illegal Invocation errors.
+  // // This is necessary because of Cloudflare Workers' isolation of the global scope.
+  // https://developers.cloudflare.com/workers/observability/errors/#illegal-invocation-errors
+  // https://zenn.dev/sui_water/articles/3329c4b318d934
+  const boundFetch = globalThis.fetch.bind(globalThis);
+  const notion = new NotionClient({ auth: env.NOTION_TOKEN, fetch: boundFetch });
   const allNetworkAdapters: SocialNetworkAdapter[] = [
     new MisskeyAdapter(env.MISSKEY_TOKEN),
     new BlueskyAdapter(env.BSKY_ID, env.BSKY_PASSWORD),
     new TwitterAdapter(env.TWITTER_API_KEY, env.TWITTER_API_SECRET, env.TWITTER_ACCESS_TOKEN, env.TWITTER_ACCESS_SECRET),
   ];
   console.log('release:', env.SENTRY_RELEASE);
+  if (dryRun) {
+    console.log('[DRY RUN] mode enabled - no actual posting or status updates will occur');
+  }
   sentry.addBreadcrumb({ level: 'log', message: 'fetching new feed items' });
 
   let incomingFeedItems: FeedItem[] = [];
@@ -39,7 +47,7 @@ async function execute(env: Env, sentry: Sentry) {
     incomingFeedItems = await fetchNewFeedItems(notion, env.NOTION_DATABASE_ID);
     console.log(`new items: ${incomingFeedItems.length}`);
   } catch (e) {
-    throw new Error(`failed to fetch new feed items: ${e}`);
+    throw new Error(`failed to fetch new feed items: ${e}`, { cause: e });
   }
 
   sentry.addBreadcrumb({ level: 'log', message: 'posting feed items to social' });
@@ -57,8 +65,8 @@ async function execute(env: Env, sentry: Sentry) {
 
       const results = await Promise.allSettled(
         networks.map(async (network) => {
-          if (isDevelopment) {
-            console.log('skipped posting in development mode');
+          if (dryRun) {
+            console.log(`[DRY RUN] would post to ${network.getNetworkKey()}: ${JSON.stringify(post, null, 2)}`);
           } else {
             await network.createPost(post);
           }
@@ -74,7 +82,11 @@ async function execute(env: Env, sentry: Sentry) {
         const { network } = result.value;
         feedItem.completedNetworkKeys.add(network);
       }
-      await saveFeedItemStatus(notion, feedItem);
+      if (dryRun) {
+        console.log(`[DRY RUN] would save feed item status for: ${feedItem.notionPageId}`);
+      } else {
+        await saveFeedItemStatus(notion, feedItem);
+      }
     }
   } catch (e) {
     throw new Error(`failed to post feed items to social: ${e}`);
@@ -92,7 +104,7 @@ if (isDevelopment) {
     const url = new URL(c.req.url);
     console.log(`triggered by fetch at ${url.toString()}`);
     try {
-      await execute(c.env, sentry);
+      await execute(c.env, sentry, true);
       return c.text('ok');
     } catch (e) {
       console.error(e);
