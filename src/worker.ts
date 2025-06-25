@@ -83,7 +83,7 @@ async function execute(env: Env, sentry: Sentry, dryRun = false) {
         feedItem.completedNetworkKeys.add(network);
       }
       if (dryRun) {
-        console.log(`[DRY RUN] would save feed item status for: ${feedItem.id}`);
+        console.log(`[DRY RUN] would save feed item status for: ${feedItem.notionPageId}`);
       } else {
         await saveFeedItemStatus(notion, feedItem);
       }
