@@ -1,6 +1,7 @@
 import { Client as NotionClient, collectPaginatedAPI } from '@notionhq/client';
 import { PageObjectResponse } from '@notionhq/client/build/src/api-endpoints';
 import { FeedItem } from './models';
+import { sanitizeTrackingParams } from './sanitize-url';
 
 type NotionProperty<T extends string> = PageObjectResponse['properties'][string] & { type: T };
 
@@ -42,7 +43,7 @@ export async function fetchNewFeedItems(notion: NotionClient, notionDatabaseId: 
     assertPropertyType(properties.url, 'url');
     assertPropertyType(properties.feed2social_completed, 'multi_select');
 
-    const url = properties.url.url ?? '';
+    const url = sanitizeTrackingParams(properties.url.url ?? '');
     if (url === '') {
       console.log(`skipped: ${page.id} has no url`);
       continue;
