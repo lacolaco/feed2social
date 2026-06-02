@@ -41,7 +41,7 @@ importers:
     devDependencies:
       '@cloudflare/workers-types':
         specifier: ^4.20230814.0
-        version: 4.20250405.0
+        version: 4.20260526.1
       '@types/crypto-js':
         specifier: ^4.1.1
         version: 4.2.2
@@ -59,7 +59,7 @@ importers:
         version: 3.2.3(@types/node@22.14.0)
       wrangler:
         specifier: ^4.0.0
-        version: 4.20.0(@cloudflare/workers-types@4.20250405.0)
+        version: 4.20.0(@cloudflare/workers-types@4.20260526.1)
 
 packages:
 
@@ -125,8 +125,8 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@cloudflare/workers-types@4.20250405.0':
-    resolution: {integrity: sha512-rE7LQirsEorBir5hymXpi0D+G01lZ65GZTKBjmkbWLNHRQyyG964wqlMzxFuFTndKttLTlJjZyZHHg5scBi4Kg==}
+  '@cloudflare/workers-types@4.20260526.1':
+    resolution: {integrity: sha512-pQZBjD7p6C5R1ZPkSywA2yiZnL/LVfqdPKLQLdbEItro4ekmMuGXQv72vHkHIT3GeZmEgZktMA0JoWn2fBKmXw==}
 
   '@cspotcode/source-map-support@0.8.1':
     resolution: {integrity: sha512-IchNf6dN4tHoMFIn/7OE8LWZ19Y6q/67Bmf6vnGREv8RSbBVb9LPJxEcnwrcwX6ixSvaiGoomAUvu4YSxXrVgw==}
@@ -1202,6 +1202,7 @@ packages:
   whatwg-encoding@3.1.1:
     resolution: {integrity: sha512-6qN4hJdMwfYBtE3YBTTHhoeuUrDBPZmbQaxWAqSALV/MeEnR5z1xd8UKud2RAkFoPkmB+hli1TZSnyi84xz1vQ==}
     engines: {node: '>=18'}
+    deprecated: Use @exodus/bytes instead for a more spec-conformant and faster implementation
 
   whatwg-mimetype@4.0.0:
     resolution: {integrity: sha512-QaKxh0eNIi2mE9p2vEdzfagOKHCcj1pJ56EEHGQOVxp8r9/iszLUUV7v89x9O1p/T+NlTM5W7jW6+cz4Fq1YVg==}
@@ -1312,7 +1313,7 @@ snapshots:
   '@cloudflare/workerd-windows-64@1.20250604.0':
     optional: true
 
-  '@cloudflare/workers-types@4.20250405.0': {}
+  '@cloudflare/workers-types@4.20260526.1': {}
 
   '@cspotcode/source-map-support@0.8.1':
     dependencies:
@@ -2248,7 +2249,7 @@ snapshots:
       '@cloudflare/workerd-linux-arm64': 1.20250604.0
       '@cloudflare/workerd-windows-64': 1.20250604.0
 
-  wrangler@4.20.0(@cloudflare/workers-types@4.20250405.0):
+  wrangler@4.20.0(@cloudflare/workers-types@4.20260526.1):
     dependencies:
       '@cloudflare/kv-asset-handler': 0.4.0
       '@cloudflare/unenv-preset': 2.3.2(unenv@2.0.0-rc.17)(workerd@1.20250604.0)
@@ -2259,7 +2260,7 @@ snapshots:
       unenv: 2.0.0-rc.17
       workerd: 1.20250604.0
     optionalDependencies:
-      '@cloudflare/workers-types': 4.20250405.0
+      '@cloudflare/workers-types': 4.20260526.1
       fsevents: 2.3.3
     transitivePeerDependencies:
       - bufferutil
