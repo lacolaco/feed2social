@@ -1,5 +1,4 @@
-import { Client as NotionClient, collectPaginatedAPI } from '@notionhq/client';
-import { PageObjectResponse } from '@notionhq/client/build/src/api-endpoints';
+import { Client as NotionClient, collectPaginatedAPI, PageObjectResponse } from '@notionhq/client';
 import { FeedItem } from './models';
 import { sanitizeTrackingParams } from './sanitize-url';
 
@@ -7,8 +6,11 @@ type NotionProperty<T extends string> = PageObjectResponse['properties'][string]
 
 export async function fetchNewFeedItems(notion: NotionClient, notionDatabaseId: string): Promise<FeedItem[]> {
   const items: FeedItem[] = [];
-  const pages = await collectPaginatedAPI(notion.databases.query, {
-    database_id: notionDatabaseId,
+  // Notion API v2025-09-03 で multi-source database 対応のため、
+  // クエリは `databases.query` から `dataSources.query` に移動した。
+  // single-source database では既存の database_id をそのまま data_source_id として使用できる。
+  const pages = await collectPaginatedAPI(notion.dataSources.query, {
+    data_source_id: notionDatabaseId,
     sorts: [{ timestamp: 'created_time', direction: 'descending' }],
     filter: {
       and: [
