@@ -26,7 +26,9 @@ export class TwitterAdapter implements SocialNetworkAdapter {
     if (!resp.ok) {
       const body = await resp.text();
       console.error(body);
-      throw new Error(`failed to post to Twitter`);
+      throw new Error(`failed to post to Twitter`, {
+        cause: new Error(`Twitter API ${resp.status} ${resp.statusText}: ${body}`),
+      });
     }
   }
 
@@ -59,7 +61,7 @@ function buildText(post: PostData) {
 
 // in-source test suites
 if (import.meta.vitest) {
-  const { describe, it, expect } = import.meta.vitest;
+  const { describe, it, expect, vi, afterEach } = import.meta.vitest;
   describe('buildText', () => {
     it('without note', () => {
       const text = buildText({
@@ -77,6 +79,38 @@ if (import.meta.vitest) {
         note: 'note',
       });
       expect(text).toBe('note "example" https://example.com #laco_feed');
+    });
+  });
+
+  describe('TwitterAdapter.createPost', () => {
+    afterEach(() => vi.restoreAllMocks());
+
+    it('API が non-2xx を返したら cause 付きで Error を throw する', async () => {
+      vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+        new Response('{"title":"Too Many Requests"}', { status: 429, statusText: 'Too Many Requests' }),
+      );
+      const adapter = new TwitterAdapter('ck', 'cs', 'at', 'as');
+      await expect(adapter.createPost({ title: 't', url: 'https://example.com', note: null })).rejects.toMatchObject({
+        message: 'failed to post to Twitter',
+        cause: expect.objectContaining({
+          message: expect.stringContaining('429'),
+        }),
+      });
+    });
+
+    it('cause には response body が含まれ Sentry で root cause を観測可能', async () => {
+      vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+        new Response('{"errors":[{"message":"Could not authenticate you"}]}', { status: 401, statusText: 'Unauthorized' }),
+      );
+      const adapter = new TwitterAdapter('ck', 'cs', 'at', 'as');
+      try {
+        await adapter.createPost({ title: 't', url: 'https://example.com', note: null });
+        expect.unreachable('createPost should have thrown');
+      } catch (e) {
+        const error = e as Error & { cause?: Error };
+        expect(error.cause?.message).toContain('Could not authenticate you');
+        expect(error.cause?.message).toContain('401');
+      }
     });
   });
 }
