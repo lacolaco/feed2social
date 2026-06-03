@@ -1,4 +1,4 @@
-import { Client as NotionClient, collectPaginatedAPI, PageObjectResponse } from '@notionhq/client';
+import { Client as NotionClient, collectPaginatedAPI, isFullDatabase, PageObjectResponse } from '@notionhq/client';
 import { FeedItem } from './models';
 import { sanitizeTrackingParams } from './sanitize-url';
 
@@ -7,10 +7,20 @@ type NotionProperty<T extends string> = PageObjectResponse['properties'][string]
 export async function fetchNewFeedItems(notion: NotionClient, notionDatabaseId: string): Promise<FeedItem[]> {
   const items: FeedItem[] = [];
   // Notion API v2025-09-03 で multi-source database 対応のため、
-  // クエリは `databases.query` から `dataSources.query` に移動した。
-  // single-source database では既存の database_id をそのまま data_source_id として使用できる。
+  // クエリは `databases.query` から `dataSources.query` に移動し、
+  // 引数も database_id ではなく data_source_id を取るようになった。
+  // 既存 env (`NOTION_DATABASE_ID`) は database id のままなので、
+  // ここで該当 database の data source id を解決する。
+  const database = await notion.databases.retrieve({ database_id: notionDatabaseId });
+  if (!isFullDatabase(database)) {
+    throw new Error(`Cannot resolve data sources for partial database response: ${notionDatabaseId}`);
+  }
+  const dataSourceId = database.data_sources[0]?.id;
+  if (!dataSourceId) {
+    throw new Error(`No data sources found in database: ${notionDatabaseId}`);
+  }
   const pages = await collectPaginatedAPI(notion.dataSources.query, {
-    data_source_id: notionDatabaseId,
+    data_source_id: dataSourceId,
     sorts: [{ timestamp: 'created_time', direction: 'descending' }],
     filter: {
       and: [
