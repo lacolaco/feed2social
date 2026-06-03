@@ -4,13 +4,12 @@ import { sanitizeTrackingParams } from './sanitize-url';
 
 type NotionProperty<T extends string> = PageObjectResponse['properties'][string] & { type: T };
 
-export async function fetchNewFeedItems(notion: NotionClient, notionDatabaseId: string): Promise<FeedItem[]> {
+export async function fetchNewFeedItems(notion: NotionClient, dataSourceId: string): Promise<FeedItem[]> {
   const items: FeedItem[] = [];
-  // Notion API v2025-09-03 で multi-source database 対応のため、
-  // クエリは `databases.query` から `dataSources.query` に移動した。
-  // single-source database では既存の database_id をそのまま data_source_id として使用できる。
+  // Notion API v2025-09-03 で query は data source 単位に変更された。
+  // 呼び出し側 (`worker.ts`) が `NOTION_DATA_SOURCE_ID` を直接渡す前提。
   const pages = await collectPaginatedAPI(notion.dataSources.query, {
-    data_source_id: notionDatabaseId,
+    data_source_id: dataSourceId,
     sorts: [{ timestamp: 'created_time', direction: 'descending' }],
     filter: {
       and: [
