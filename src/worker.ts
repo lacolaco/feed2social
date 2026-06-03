@@ -12,7 +12,7 @@ export type Env = {
   SENTRY_DSN: string;
   SENTRY_RELEASE: string;
   NOTION_TOKEN: string;
-  NOTION_DATABASE_ID: string;
+  NOTION_DATA_SOURCE_ID: string;
   MISSKEY_TOKEN: string;
   BSKY_ID: string;
   BSKY_PASSWORD: string;
@@ -44,7 +44,7 @@ async function execute(env: Env, sentry: Sentry, dryRun = false) {
 
   let incomingFeedItems: FeedItem[] = [];
   try {
-    incomingFeedItems = await fetchNewFeedItems(notion, env.NOTION_DATABASE_ID);
+    incomingFeedItems = await fetchNewFeedItems(notion, env.NOTION_DATA_SOURCE_ID);
     console.log(`new items: ${incomingFeedItems.length}`);
   } catch (e) {
     throw new Error(`failed to fetch new feed items: ${e}`, { cause: e });

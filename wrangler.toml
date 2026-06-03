@@ -15,6 +15,6 @@ crons = ["*/5 * * * *"]
 
 [vars]
 BSKY_ID = "lacolaco.bsky.social"
-NOTION_DATABASE_ID = "bce0d0a9147e468ca227788ca1797d28"
+NOTION_DATA_SOURCE_ID = "800e0eb6-03c4-4fd0-81a3-c4f11fa107eb"
 SENTRY_DSN = "https://2037e01514d53cf9de52433a5d5d5626@o4505734726549504.ingest.sentry.io/4505734743523328"
 SENTRY_RELEASE = "${SENTRY_RELEASE}"
