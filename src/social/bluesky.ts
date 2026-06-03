@@ -1,27 +1,24 @@
 import { AtpAgent, RichText } from '@atproto/api';
-import { truncate } from 'tweet-truncator';
 import { PostData, SocialNetworkAdapter } from '../models';
 
 const BLUESKY_MAX_GRAPHEMES = 300;
+const SEGMENTER = new Intl.Segmenter(undefined, { granularity: 'grapheme' });
+
+function graphemes(text: string): string[] {
+  return [...SEGMENTER.segment(text)].map((s) => s.segment);
+}
 
 const bsky = new AtpAgent({ service: 'https://bsky.social' });
 
 export function buildText(post: PostData): string {
-  const truncated = truncate(
-    { desc: post.note ?? '', title: post.title, url: post.url },
-    {
-      defaultPrefix: '🔖',
-      template: '%desc% "%title%" %url%',
-      truncatedOrder: ['title', 'desc'],
-      maxLength: BLUESKY_MAX_GRAPHEMES,
-    },
-  );
-  // tweet-truncator uses twitter-text weighted counts (URL=23, emoji=2),
-  // which differ from Bluesky's grapheme count. Enforce the real limit here.
-  const segmenter = new Intl.Segmenter(undefined, { granularity: 'grapheme' });
-  const graphemes = [...segmenter.segment(truncated)].map((s) => s.segment);
-  if (graphemes.length <= BLUESKY_MAX_GRAPHEMES) return truncated;
-  return graphemes.slice(0, BLUESKY_MAX_GRAPHEMES - 1).join('') + '…';
+  const prefix = post.note ?? '🔖';
+  const url = post.url;
+  // Fixed framing: `${prefix} "${title}" ${url}` — anything outside `title` is required.
+  const framingGraphemes = graphemes(prefix).length + graphemes(' "" ').length + graphemes(url).length;
+  const titleBudget = BLUESKY_MAX_GRAPHEMES - framingGraphemes;
+  const titleGr = graphemes(post.title);
+  const title = titleGr.length <= titleBudget ? post.title : titleGr.slice(0, Math.max(0, titleBudget - 1)).join('') + '…';
+  return `${prefix} "${title}" ${url}`;
 }
 
 export class BlueskyAdapter implements SocialNetworkAdapter {
@@ -86,9 +83,10 @@ if (import.meta.vitest) {
       });
       expect(countGraphemes(text)).toBeLessThanOrEqual(300);
       expect(text).toContain('https://example.com');
+      expect(text).toContain('a'.repeat(100));
     });
 
-    it('300 grapheme を超える日本語 title は 300 以下に切り詰める', () => {
+    it('300 grapheme を超える日本語 title は title 内容を保持したまま 300 以下に切り詰める', () => {
       const longTitle = 'あ'.repeat(400);
       const text = buildText({
         url: 'https://example.com',
@@ -97,17 +95,31 @@ if (import.meta.vitest) {
       });
       expect(countGraphemes(text)).toBeLessThanOrEqual(300);
       expect(text).toContain('https://example.com');
+      // title must not be silently emptied to `""`
+      expect(text).toMatch(/"あ+…"/);
+      // title budget = 300 − framing(≈30) ≈ 270 → at least 200 graphemes of title survive
+      expect((text.match(/あ/g) ?? []).length).toBeGreaterThan(200);
     });
 
-    it('複合絵文字 (ZWJ シーケンス) を grapheme で正しく数える', () => {
-      // 👨‍👩‍👧 は ZWJ シーケンスで 1 grapheme だが複数 code points
+    it('複合絵文字 (ZWJ シーケンス) で truncation 境界が cluster を割らない', () => {
+      // 👨‍👩‍👧 は ZWJ シーケンスで 1 grapheme だが 8 code units
+      // 400 シーケンス = 400 graphemes、framing と合わせて 300 を超える
       const text = buildText({
         url: 'https://example.com',
-        title: '👨‍👩‍👧'.repeat(200),
+        title: '👨‍👩‍👧'.repeat(400),
         note: null,
       });
       expect(countGraphemes(text)).toBeLessThanOrEqual(300);
-      expect(text).toContain('https://example.com');
+      // truncation must end on a complete cluster + ellipsis, never on a partial ZWJ
+      expect(text).toMatch(/👨‍👩‍👧…/);
+      // no orphan high surrogate at the cut
+      for (let i = 0; i < text.length; i++) {
+        const c = text.charCodeAt(i);
+        if (c >= 0xd800 && c <= 0xdbff) {
+          expect(text.charCodeAt(i + 1)).toBeGreaterThanOrEqual(0xdc00);
+          expect(text.charCodeAt(i + 1)).toBeLessThanOrEqual(0xdfff);
+        }
+      }
     });
 
     it('IRON-WORKER-16 の症状 (348 graphemes) を再現せず 300 以下にする', () => {
