@@ -52,8 +52,11 @@ async function execute(env: Env, sentry: Sentry, dryRun = false) {
 
   sentry.addBreadcrumb({ level: 'log', message: 'posting feed items to social' });
 
-  try {
-    for (const feedItem of incomingFeedItems) {
+  for (const feedItem of incomingFeedItems) {
+    // 1 件の処理失敗 (Notion 5xx、status 更新失敗、createPost 後の予期せぬ例外) が
+    // バッチ全体を中止させると、同じバッチの後続アイテムが次のティックで再投稿対象になり、
+    // すでに成功したネットワークへ重複投稿される。各アイテムを独立した try/catch で隔離する。
+    try {
       sentry.addBreadcrumb({ level: 'log', message: 'posting feed item to social', data: feedItem });
       console.log(`posting: ${JSON.stringify(feedItem, null, 2)}`);
 
@@ -87,9 +90,10 @@ async function execute(env: Env, sentry: Sentry, dryRun = false) {
       } else {
         await saveFeedItemStatus(notion, feedItem);
       }
+    } catch (e) {
+      console.error(`failed to process feed item ${feedItem.notionPageId}:`, e);
+      sentry.captureException(e);
     }
-  } catch (e) {
-    throw new Error(`failed to post feed items to social: ${e}`);
   }
 
   sentry.addBreadcrumb({ level: 'log', message: 'done' });
