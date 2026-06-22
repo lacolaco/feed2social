@@ -27,14 +27,14 @@ export function buildFeedItemFilter(now: Date) {
   };
 }
 
-export async function fetchNewFeedItems(notion: NotionClient, dataSourceId: string): Promise<FeedItem[]> {
+export async function fetchNewFeedItems(notion: NotionClient, dataSourceId: string, now: Date = new Date()): Promise<FeedItem[]> {
   const items: FeedItem[] = [];
   // Notion API v2025-09-03 で query は data source 単位に変更された。
   // 呼び出し側 (`worker.ts`) が `NOTION_DATA_SOURCE_ID` を直接渡す前提。
   const pages = await collectPaginatedAPI(notion.dataSources.query, {
     data_source_id: dataSourceId,
     sorts: [{ timestamp: 'created_time', direction: 'descending' }],
-    filter: buildFeedItemFilter(new Date()),
+    filter: buildFeedItemFilter(now),
   });
   for (const page of pages) {
     if (page.object !== 'page' || !('properties' in page)) {
