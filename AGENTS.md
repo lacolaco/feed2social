@@ -1,6 +1,6 @@
 # Agent instructions
 
-Shared repository instructions for all coding agents. Claude Code imports this file through CLAUDE.md. No agent-specific CLI or personal skill is required. See [README.md](README.md) for development setup and commands.
+Shared repository instructions for all coding agents. Claude Code 2.1.277+ can read this file directly, depending on its Project instructions setting and any ancestor `CLAUDE.md` files. No agent-specific CLI or personal skill is required. See [README.md](README.md) for development setup and commands.
 
 ## Working rules
 

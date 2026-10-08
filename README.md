@@ -4,7 +4,7 @@ Implements the `#laco_feed` system on Twitter, Misskey and Bluesky using a Cloud
 
 ![feed2social architecture](docs/archtecture.png)
 
-Shared coding-agent instructions are in [AGENTS.md](AGENTS.md). Claude Code imports them from [CLAUDE.md](CLAUDE.md).
+Shared coding-agent instructions are in [AGENTS.md](AGENTS.md). Claude Code 2.1.277+ can read it directly, depending on its Project instructions setting and any ancestor `CLAUDE.md` files.
 
 ## Development setup
 
