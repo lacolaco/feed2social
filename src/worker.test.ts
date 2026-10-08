@@ -167,4 +167,23 @@ describe('scheduled feed Twitter credit breaker', () => {
     expect(mocks.saveStatus).toHaveBeenCalledTimes(2);
     expect(sentry.captureException).toHaveBeenCalledWith(storageError);
   });
+
+  it('keeps retrying recovery after a KV delete failure while saving completed posts', async () => {
+    const { env, kv, values, sentry } = fixture();
+    values.set('twitter-credits-v1', JSON.stringify({ openedAt: '2026-10-08T00:00:00.000Z', nextRetryAt: '2026-10-08T01:00:00.000Z' }));
+    const storageError = new Error('KV unavailable');
+    kv.delete.mockRejectedValueOnce(storageError);
+    mocks.fetchItems.mockImplementation(async () => [item('first', ['misskey', 'bluesky']), item('second', ['misskey', 'bluesky'])]);
+
+    await execute(env, sentry as never, false, new Date('2026-10-08T01:00:00Z'));
+
+    expect(kv.delete).toHaveBeenCalledTimes(2);
+    expect(mocks.twitterPost).toHaveBeenCalledTimes(2);
+    expect(mocks.saveStatus.mock.calls.map(([, feedItem]) => [...feedItem.completedNetworkKeys])).toEqual([
+      ['misskey', 'bluesky', 'twitter'],
+      ['misskey', 'bluesky', 'twitter'],
+    ]);
+    expect(sentry.captureException).toHaveBeenCalledWith(storageError);
+    expect(sentry.captureMessage).toHaveBeenCalledTimes(1);
+  });
 });
