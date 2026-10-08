@@ -7,7 +7,6 @@ import { fetchNewFeedItems, saveFeedItemStatus } from './repository';
 import { BlueskyAdapter } from './social/bluesky';
 import { MisskeyAdapter } from './social/misskey';
 import { TwitterAdapter, TwitterCreditsDepletedError } from './social/twitter';
-import { canAttemptTwitter, creditsDepleted, twitterRecovered, type TwitterBreakerState } from './twitter-breaker';
 
 export type Env = {
   SENTRY_DSN: string;
@@ -21,62 +20,11 @@ export type Env = {
   TWITTER_API_SECRET: string;
   TWITTER_ACCESS_TOKEN: string;
   TWITTER_ACCESS_SECRET: string;
-  TWITTER_BREAKER: KVNamespace;
 };
 
 const isDevelopment = process.env.NODE_ENV === 'development';
-const TWITTER_BREAKER_KEY = 'twitter-credits-v1';
 
-async function readTwitterBreaker(env: Env, sentry: Sentry, dryRun: boolean): Promise<TwitterBreakerState> {
-  if (dryRun) return { kind: 'closed' };
-  try {
-    const stored = await env.TWITTER_BREAKER.get(TWITTER_BREAKER_KEY);
-    if (!stored) return { kind: 'closed' };
-    return { kind: 'open', ...JSON.parse(stored) };
-  } catch (error) {
-    console.error('failed to read Twitter credits breaker:', error);
-    sentry.captureException(error);
-    return { kind: 'unavailable' };
-  }
-}
-
-async function recordTwitterDepletion(
-  state: TwitterBreakerState,
-  now: Date,
-  error: TwitterCreditsDepletedError,
-  env: Env,
-  sentry: Sentry,
-): Promise<TwitterBreakerState> {
-  const transition = creditsDepleted(state, now);
-  try {
-    const { openedAt, nextRetryAt } = transition.state;
-    await env.TWITTER_BREAKER.put(TWITTER_BREAKER_KEY, JSON.stringify({ openedAt, nextRetryAt }));
-  } catch (storageError) {
-    console.error('failed to save Twitter credits breaker:', storageError);
-    sentry.captureException(storageError);
-    return transition.state;
-  }
-  console.warn(`Twitter credits breaker open; next retry: ${transition.state.nextRetryAt}`);
-  if (transition.notify) sentry.captureException(error);
-  return transition.state;
-}
-
-async function recordTwitterRecovery(state: TwitterBreakerState, env: Env, sentry: Sentry): Promise<TwitterBreakerState> {
-  const transition = twitterRecovered(state);
-  if (!transition.notify) return state;
-  try {
-    await env.TWITTER_BREAKER.delete(TWITTER_BREAKER_KEY);
-    console.info('Twitter credits recovered; posting resumed');
-    sentry.captureMessage('Twitter credits recovered; posting resumed');
-    return transition.state;
-  } catch (error) {
-    console.error('failed to clear Twitter credits breaker:', error);
-    sentry.captureException(error);
-    return state;
-  }
-}
-
-export async function execute(env: Env, sentry: Sentry, dryRun = false, now = new Date()) {
+export async function execute(env: Env, sentry: Sentry, dryRun = false) {
   // Bind fetch to globalThis to avoid Illegal Invocation errors.
   // // This is necessary because of Cloudflare Workers' isolation of the global scope.
   // https://developers.cloudflare.com/workers/observability/errors/#illegal-invocation-errors
@@ -92,13 +40,11 @@ export async function execute(env: Env, sentry: Sentry, dryRun = false, now = ne
   if (dryRun) {
     console.log('[DRY RUN] mode enabled - no actual posting or status updates will occur');
   }
-  let twitterBreaker = await readTwitterBreaker(env, sentry, dryRun);
-  if (twitterBreaker.kind === 'open') console.log(`Twitter credits breaker open; next retry: ${twitterBreaker.nextRetryAt}`);
   sentry.addBreadcrumb({ level: 'log', message: 'fetching new feed items' });
 
   let incomingFeedItems: FeedItem[] = [];
   try {
-    incomingFeedItems = await fetchNewFeedItems(notion, env.NOTION_DATA_SOURCE_ID, now, canAttemptTwitter(twitterBreaker, now));
+    incomingFeedItems = await fetchNewFeedItems(notion, env.NOTION_DATA_SOURCE_ID);
     console.log(`new items: ${incomingFeedItems.length}`);
   } catch (e) {
     throw new Error(`failed to fetch new feed items: ${e}`, { cause: e });
@@ -106,19 +52,16 @@ export async function execute(env: Env, sentry: Sentry, dryRun = false, now = ne
 
   sentry.addBreadcrumb({ level: 'log', message: 'posting feed items to social' });
 
+  let twitterCreditsFailures = 0;
   for (const feedItem of incomingFeedItems) {
     // 1 件の処理失敗 (Notion 5xx、status 更新失敗、createPost 後の予期せぬ例外) が
     // バッチ全体を中止させると、同じバッチの後続アイテムが次のティックで再投稿対象になり、
     // すでに成功したネットワークへ重複投稿される。各アイテムを独立した try/catch で隔離する。
     try {
-      const networks = allNetworkAdapters.filter(
-        (network) =>
-          !feedItem.completedNetworkKeys.has(network.getNetworkKey()) &&
-          (network.getNetworkKey() !== 'twitter' || canAttemptTwitter(twitterBreaker, now)),
-      );
-      if (networks.length === 0) continue;
       sentry.addBreadcrumb({ level: 'log', message: 'posting feed item to social', data: feedItem });
       console.log(`posting: ${JSON.stringify(feedItem, null, 2)}`);
+
+      const networks = allNetworkAdapters.filter((network) => !feedItem.completedNetworkKeys.has(network.getNetworkKey()));
       console.log(`posted to ${networks.map((network) => network.getNetworkKey()).join(', ')}`);
 
       const post = await createPostData(feedItem);
@@ -135,10 +78,9 @@ export async function execute(env: Env, sentry: Sentry, dryRun = false, now = ne
         }),
       );
       for (const [index, result] of results.entries()) {
-        const networkKey = networks[index].getNetworkKey();
         if (result.status === 'rejected') {
-          if (networkKey === 'twitter' && result.reason instanceof TwitterCreditsDepletedError && !dryRun) {
-            twitterBreaker = await recordTwitterDepletion(twitterBreaker, now, result.reason, env, sentry);
+          if (networks[index].getNetworkKey() === 'twitter' && result.reason instanceof TwitterCreditsDepletedError) {
+            twitterCreditsFailures++;
             continue;
           }
           console.error(`failed to post: ${result.reason}`);
@@ -147,7 +89,6 @@ export async function execute(env: Env, sentry: Sentry, dryRun = false, now = ne
         }
         const { network } = result.value;
         feedItem.completedNetworkKeys.add(network);
-        if (network === 'twitter' && !dryRun) twitterBreaker = await recordTwitterRecovery(twitterBreaker, env, sentry);
       }
       if (dryRun) {
         console.log(`[DRY RUN] would save feed item status for: ${feedItem.notionPageId}`);
@@ -160,6 +101,7 @@ export async function execute(env: Env, sentry: Sentry, dryRun = false, now = ne
     }
   }
 
+  if (twitterCreditsFailures > 0) console.warn(`Twitter credits depleted for ${twitterCreditsFailures} posts`);
   sentry.addBreadcrumb({ level: 'log', message: 'done' });
 }
 

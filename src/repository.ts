@@ -9,7 +9,7 @@ type NotionProperty<T extends string> = PageObjectResponse['properties'][string]
 // 固定ローリング窓 (現在時刻から past N 日) で取りこぼしを防ぐ。
 const FEED_ITEM_LOOKBACK_DAYS = 8;
 
-export function buildFeedItemFilter(now: Date, includeTwitter = true) {
+export function buildFeedItemFilter(now: Date) {
   const since = new Date(now.getTime() - FEED_ITEM_LOOKBACK_DAYS * 24 * 60 * 60 * 1000).toISOString();
   return {
     and: [
@@ -20,44 +20,23 @@ export function buildFeedItemFilter(now: Date, includeTwitter = true) {
         or: [
           { property: 'feed2social_completed', multi_select: { does_not_contain: 'misskey' } },
           { property: 'feed2social_completed', multi_select: { does_not_contain: 'bluesky' } },
-          ...(includeTwitter ? [{ property: 'feed2social_completed', multi_select: { does_not_contain: 'twitter' } }] : []),
+          { property: 'feed2social_completed', multi_select: { does_not_contain: 'twitter' } },
         ],
       },
     ],
   };
 }
 
-export async function fetchNewFeedItems(
-  notion: NotionClient,
-  dataSourceId: string,
-  now: Date = new Date(),
-  includeTwitter = true,
-): Promise<FeedItem[]> {
+export async function fetchNewFeedItems(notion: NotionClient, dataSourceId: string, now: Date = new Date()): Promise<FeedItem[]> {
   const items: FeedItem[] = [];
   // Notion API v2025-09-03 で query は data source 単位に変更された。
   // 呼び出し側 (`worker.ts`) が `NOTION_DATA_SOURCE_ID` を直接渡す前提。
   const pages = await collectPaginatedAPI(notion.dataSources.query, {
     data_source_id: dataSourceId,
     sorts: [{ timestamp: 'created_time', direction: 'descending' }],
-    filter: buildFeedItemFilter(now, includeTwitter),
+    filter: buildFeedItemFilter(now),
   });
-  const twitterPages = includeTwitter
-    ? await collectPaginatedAPI(notion.dataSources.query, {
-        data_source_id: dataSourceId,
-        sorts: [{ timestamp: 'created_time', direction: 'descending' }],
-        filter: {
-          and: [
-            { property: 'url', url: { is_not_empty: true } },
-            { property: 'feed2social', checkbox: { does_not_equal: true } },
-            { property: 'feed2social_completed', multi_select: { does_not_contain: 'twitter' } },
-          ],
-        },
-      })
-    : [];
-  const seen = new Set<string>();
-  for (const page of [...pages, ...twitterPages]) {
-    if (seen.has(page.id)) continue;
-    seen.add(page.id);
+  for (const page of pages) {
     if (page.object !== 'page' || !('properties' in page)) {
       console.log(`skipped: ${page.id} is not a page`);
       continue;

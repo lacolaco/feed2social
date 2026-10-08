@@ -75,8 +75,6 @@ The scheduled handler does **not** enable dry-run mode. Invoking the scheduled t
 
 Production cron is `*/5 * * * *` in `wrangler.toml`. Its entry point is `src/worker.ts`; Twitter posting is in `src/social/twitter.ts`, and Notion status updates are in `src/repository.ts`.
 
-Twitter credits depletion requires a Workers KV namespace bound as `TWITTER_BREAKER` before this version is deployed. This repository does not create that namespace or configure its production binding. The Worker stores `twitter-credits-v1` with `openedAt` and `nextRetryAt` timestamps, retries one Twitter post after one hour, and clears the key on success. While the key is open, Misskey and Bluesky continue, and unfinished Twitter items stay in Notion. A separate all-time Notion query retrieves unfinished Twitter items after credits recover, including items older than the usual eight-day window. KV is eventually consistent, so concurrent or geographically separated invocations may make an additional probe; it does not provide an exact global single-probe guarantee. Inspect the KV key and Worker logs to see the current state and next retry time.
-
 `pnpm run deploy` deploys the Worker and its configuration, including cron triggers. Deployment and production changes require explicit authorization and are not part of local setup.
 
 ## License

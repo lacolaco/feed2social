@@ -27,12 +27,12 @@ export class TwitterAdapter implements SocialNetworkAdapter {
     const resp = await this.fetchWithAuth('https://api.twitter.com/2/tweets', 'POST', { text });
     if (!resp.ok) {
       const body = await resp.text();
-      console.error(body);
       if (resp.status === 402 && /CreditsDepleted|credits? (?:are )?depleted|no credits/i.test(body)) {
         throw new TwitterCreditsDepletedError('Twitter API 402 credits depleted', {
           cause: new Error(`Twitter API ${resp.status} ${resp.statusText}: ${body}`),
         });
       }
+      console.error(body);
       throw new Error(`failed to post to Twitter`, {
         cause: new Error(`Twitter API ${resp.status} ${resp.statusText}: ${body}`),
       });
@@ -92,7 +92,7 @@ if (import.meta.vitest) {
   describe('TwitterAdapter.createPost', () => {
     afterEach(() => vi.restoreAllMocks());
 
-    it('classifies only credits-depleted 402 as a breaker error', async () => {
+    it('classifies only credits-depleted 402 as expected unavailability', async () => {
       const adapter = new TwitterAdapter('ck', 'cs', 'at', 'as');
       vi.spyOn(globalThis, 'fetch')
         .mockResolvedValueOnce(new Response('{"title":"CreditsDepleted","detail":"Your account has no credits"}', { status: 402 }))
