@@ -1,25 +1,17 @@
-# CLAUDE.md
+# Agent instructions
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+Shared repository instructions for all coding agents. Claude Code 2.1.277+ can read this file directly, depending on its Project instructions setting and any ancestor `CLAUDE.md` files. No agent-specific CLI or personal skill is required. See [README.md](README.md) for development setup and commands.
 
-## Development Commands
+## Working rules
 
-### Essential Commands
-
-- `pnpm install` - Install dependencies (uses pnpm 10.7.0)
-- `npm run start` - Start development server with scheduled event testing
-- `npm run deploy` - Deploy to Cloudflare Workers
-- `npm test` - Run tests in watch mode
-- `npm run test:ci` - Run tests once (for CI)
-- `npm run lint` - Check code formatting with Prettier
-- `npm run format` - Auto-format code with Prettier
-
-### Testing
-
-- `npm test src/page-title.ts` - Run tests for a specific file
-- `npm test -- --run` - Run tests once without watch mode
-- Tests use Vitest with in-source testing enabled (`import.meta.vitest`)
-- Integration tests may take longer (10s timeout configured)
+- Preserve existing user changes and inspect the working tree before editing.
+- Use the Node.js and pnpm versions declared in package.json and preserve pnpm-lock.yaml.
+- Keep credentials in ignored local configuration; never print their values or commit them.
+- Default to unit tests with mocked external APIs. The full test suite includes a live HTTP integration test.
+- Treat scheduled execution as a write operation: it posts to social networks and updates Notion even in development mode. Do not invoke it without explicit authorization.
+- The development `/_/execute` endpoint skips social posting and Notion updates, but reads external services and sends Sentry telemetry. It is not an offline test.
+- Posting, production changes, billing, credential creation, commit, push, and deployment require authorization for the current task.
+- Use the README verification commands. Report failures and skipped checks; do not change application configuration just to make a documentation check pass.
 
 ## Architecture Overview
 
@@ -36,7 +28,7 @@ This is a Cloudflare Workers application that automatically posts content from a
 5. **Multi-Platform Posting**: Posts to Twitter, Misskey, and Bluesky
 6. **Status Tracking**: Updates Notion database with completion status
 
-### Key Components
+### Main modules
 
 #### Data Models (`src/models.ts`)
 
@@ -69,7 +61,8 @@ This is a Cloudflare Workers application that automatically posts content from a
 
 #### Environment Configuration
 
-- Development mode: `NODE_ENV=development` skips actual posting
+- Development mode exposes `/_/execute`, which calls `execute` with `dryRun=true`.
+- The scheduled handler calls `execute` without dry-run mode, regardless of NODE_ENV.
 - Debug endpoint: `/_/execute` available in development
 - Required environment variables: `NOTION_TOKEN`, social network credentials, Sentry configuration
 
@@ -89,6 +82,6 @@ This is a Cloudflare Workers application that automatically posts content from a
 
 ### Dependencies
 
-- Node.js 22.0.0+ required
+- Node.js ^24.0.0 and pnpm 10.33.4 required (package.json is authoritative)
 - Uses Cloudflare Workers runtime
 - Key libraries: Hono (web framework), Notion client, Cheerio (HTML parsing), encoding-japanese
