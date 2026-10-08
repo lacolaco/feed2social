@@ -6,7 +6,7 @@ import { initSentry, Sentry } from './observability/sentry';
 import { fetchNewFeedItems, saveFeedItemStatus } from './repository';
 import { BlueskyAdapter } from './social/bluesky';
 import { MisskeyAdapter } from './social/misskey';
-import { TwitterAdapter } from './social/twitter';
+import { TwitterAdapter, TwitterCreditsDepletedError } from './social/twitter';
 
 export type Env = {
   SENTRY_DSN: string;
@@ -20,11 +20,15 @@ export type Env = {
   TWITTER_API_SECRET: string;
   TWITTER_ACCESS_TOKEN: string;
   TWITTER_ACCESS_SECRET: string;
+  TWITTER_BREAKER: KVNamespace;
 };
 
 const isDevelopment = process.env.NODE_ENV === 'development';
+const TWITTER_BREAKER_KEY = 'twitter-credits-v1';
+const TWITTER_RETRY_MS = 60 * 60 * 1000;
+type TwitterBreakerState = { openedAt: string; nextRetryAt: string };
 
-async function execute(env: Env, sentry: Sentry, dryRun = false) {
+export async function execute(env: Env, sentry: Sentry, dryRun = false, now = new Date()) {
   // Bind fetch to globalThis to avoid Illegal Invocation errors.
   // // This is necessary because of Cloudflare Workers' isolation of the global scope.
   // https://developers.cloudflare.com/workers/observability/errors/#illegal-invocation-errors
@@ -40,11 +44,24 @@ async function execute(env: Env, sentry: Sentry, dryRun = false) {
   if (dryRun) {
     console.log('[DRY RUN] mode enabled - no actual posting or status updates will occur');
   }
+  let twitterState: TwitterBreakerState | null = null;
+  let twitterAllowed = true;
+  if (!dryRun) {
+    try {
+      twitterState = JSON.parse((await env.TWITTER_BREAKER.get(TWITTER_BREAKER_KEY)) ?? 'null');
+      twitterAllowed = !twitterState || now >= new Date(twitterState.nextRetryAt);
+    } catch (e) {
+      twitterAllowed = false;
+      console.error('failed to read Twitter credits breaker:', e);
+      sentry.captureException(e);
+    }
+  }
+  if (twitterState) console.log(`Twitter credits breaker open; next retry: ${twitterState.nextRetryAt}`);
   sentry.addBreadcrumb({ level: 'log', message: 'fetching new feed items' });
 
   let incomingFeedItems: FeedItem[] = [];
   try {
-    incomingFeedItems = await fetchNewFeedItems(notion, env.NOTION_DATA_SOURCE_ID);
+    incomingFeedItems = await fetchNewFeedItems(notion, env.NOTION_DATA_SOURCE_ID, now, twitterAllowed);
     console.log(`new items: ${incomingFeedItems.length}`);
   } catch (e) {
     throw new Error(`failed to fetch new feed items: ${e}`, { cause: e });
@@ -57,10 +74,13 @@ async function execute(env: Env, sentry: Sentry, dryRun = false) {
     // バッチ全体を中止させると、同じバッチの後続アイテムが次のティックで再投稿対象になり、
     // すでに成功したネットワークへ重複投稿される。各アイテムを独立した try/catch で隔離する。
     try {
+      const networks = allNetworkAdapters.filter(
+        (network) =>
+          !feedItem.completedNetworkKeys.has(network.getNetworkKey()) && (network.getNetworkKey() !== 'twitter' || twitterAllowed),
+      );
+      if (networks.length === 0) continue;
       sentry.addBreadcrumb({ level: 'log', message: 'posting feed item to social', data: feedItem });
       console.log(`posting: ${JSON.stringify(feedItem, null, 2)}`);
-
-      const networks = allNetworkAdapters.filter((network) => !feedItem.completedNetworkKeys.has(network.getNetworkKey()));
       console.log(`posted to ${networks.map((network) => network.getNetworkKey()).join(', ')}`);
 
       const post = await createPostData(feedItem);
@@ -76,14 +96,44 @@ async function execute(env: Env, sentry: Sentry, dryRun = false) {
           return { network: network.getNetworkKey(), status: 'ok' };
         }),
       );
-      for (const result of results) {
+      for (const [index, result] of results.entries()) {
+        const networkKey = networks[index].getNetworkKey();
         if (result.status === 'rejected') {
+          if (networkKey === 'twitter' && result.reason instanceof TwitterCreditsDepletedError && !dryRun) {
+            const wasOpen = twitterState !== null;
+            twitterState = {
+              openedAt: twitterState?.openedAt ?? now.toISOString(),
+              nextRetryAt: new Date(now.getTime() + TWITTER_RETRY_MS).toISOString(),
+            };
+            twitterAllowed = false;
+            try {
+              await env.TWITTER_BREAKER.put(TWITTER_BREAKER_KEY, JSON.stringify(twitterState));
+            } catch (e) {
+              console.error('failed to save Twitter credits breaker:', e);
+              sentry.captureException(e);
+              continue;
+            }
+            console.warn(`Twitter credits breaker open; next retry: ${twitterState.nextRetryAt}`);
+            if (!wasOpen) sentry.captureException(result.reason);
+            continue;
+          }
           console.error(`failed to post: ${result.reason}`);
           sentry.captureException(result.reason);
           continue;
         }
         const { network } = result.value;
         feedItem.completedNetworkKeys.add(network);
+        if (network === 'twitter' && twitterState && !dryRun) {
+          try {
+            await env.TWITTER_BREAKER.delete(TWITTER_BREAKER_KEY);
+            twitterState = null;
+            console.info('Twitter credits recovered; posting resumed');
+            sentry.captureMessage('Twitter credits recovered; posting resumed');
+          } catch (e) {
+            console.error('failed to clear Twitter credits breaker:', e);
+            sentry.captureException(e);
+          }
+        }
       }
       if (dryRun) {
         console.log(`[DRY RUN] would save feed item status for: ${feedItem.notionPageId}`);
