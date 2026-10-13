@@ -6,7 +6,7 @@ import { initSentry, Sentry } from './observability/sentry';
 import { fetchNewFeedItems, saveFeedItemStatus } from './repository';
 import { BlueskyAdapter } from './social/bluesky';
 import { MisskeyAdapter } from './social/misskey';
-import { TwitterAdapter } from './social/twitter';
+import { TwitterAdapter, TwitterCreditsDepletedError } from './social/twitter';
 
 export type Env = {
   SENTRY_DSN: string;
@@ -24,7 +24,14 @@ export type Env = {
 
 const isDevelopment = process.env.NODE_ENV === 'development';
 
-async function execute(env: Env, sentry: Sentry, dryRun = false) {
+const CREDITS_REPORT_WINDOW_MS = 5 * 60 * 1000;
+
+// Sentry の Errors 枠を守るため、クレジット不足は UTC 00:00 から 5 分未満の実行 (1 日 1 回) でだけ送る。
+export function isCreditsReportWindow(scheduledTime: number): boolean {
+  return scheduledTime % (24 * 60 * 60 * 1000) < CREDITS_REPORT_WINDOW_MS;
+}
+
+export async function execute(env: Env, sentry: Sentry, dryRun = false, scheduledTime = Date.now()) {
   // Bind fetch to globalThis to avoid Illegal Invocation errors.
   // // This is necessary because of Cloudflare Workers' isolation of the global scope.
   // https://developers.cloudflare.com/workers/observability/errors/#illegal-invocation-errors
@@ -52,6 +59,7 @@ async function execute(env: Env, sentry: Sentry, dryRun = false) {
 
   sentry.addBreadcrumb({ level: 'log', message: 'posting feed items to social' });
 
+  let twitterCreditsFailures = 0;
   for (const feedItem of incomingFeedItems) {
     // 1 件の処理失敗 (Notion 5xx、status 更新失敗、createPost 後の予期せぬ例外) が
     // バッチ全体を中止させると、同じバッチの後続アイテムが次のティックで再投稿対象になり、
@@ -76,8 +84,12 @@ async function execute(env: Env, sentry: Sentry, dryRun = false) {
           return { network: network.getNetworkKey(), status: 'ok' };
         }),
       );
-      for (const result of results) {
+      for (const [index, result] of results.entries()) {
         if (result.status === 'rejected') {
+          if (networks[index].getNetworkKey() === 'twitter' && result.reason instanceof TwitterCreditsDepletedError) {
+            twitterCreditsFailures++;
+            continue;
+          }
           console.error(`failed to post: ${result.reason}`);
           sentry.captureException(result.reason);
           continue;
@@ -96,6 +108,15 @@ async function execute(env: Env, sentry: Sentry, dryRun = false) {
     }
   }
 
+  if (twitterCreditsFailures > 0) {
+    console.warn(`Twitter credits depleted for ${twitterCreditsFailures} posts`);
+    if (isCreditsReportWindow(scheduledTime)) {
+      sentry.withScope((scope) => {
+        scope.setFingerprint(['twitter-credits-depleted']);
+        scope.captureException(new Error(`Twitter credits depleted for ${twitterCreditsFailures} posts`));
+      });
+    }
+  }
   sentry.addBreadcrumb({ level: 'log', message: 'done' });
 }
 
@@ -126,7 +147,7 @@ export default {
     sentry.setContext('event', { cron: event.cron, scheduledTime: event.scheduledTime });
     const checkInId = sentry.captureCheckIn({ monitorSlug: 'scheduled-feed2social', status: 'in_progress' });
     ctx.waitUntil(
-      execute(env, sentry)
+      execute(env, sentry, false, event.scheduledTime)
         .then(() => {
           sentry.captureCheckIn({ checkInId, monitorSlug: 'scheduled-feed2social', status: 'ok' });
         })

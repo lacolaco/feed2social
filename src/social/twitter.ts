@@ -4,6 +4,8 @@ import OAuth from 'oauth-1.0a';
 import { truncate } from 'tweet-truncator';
 import { PostData, SocialNetworkAdapter } from '../models';
 
+export class TwitterCreditsDepletedError extends Error {}
+
 export class TwitterAdapter implements SocialNetworkAdapter {
   constructor(
     private readonly consumerKey: string,
@@ -25,6 +27,11 @@ export class TwitterAdapter implements SocialNetworkAdapter {
     const resp = await this.fetchWithAuth('https://api.twitter.com/2/tweets', 'POST', { text });
     if (!resp.ok) {
       const body = await resp.text();
+      if (resp.status === 402 && /CreditsDepleted|credits? (?:are )?depleted|no credits/i.test(body)) {
+        throw new TwitterCreditsDepletedError('Twitter API 402 credits depleted', {
+          cause: new Error(`Twitter API ${resp.status} ${resp.statusText}: ${body}`),
+        });
+      }
       console.error(body);
       throw new Error(`failed to post to Twitter`, {
         cause: new Error(`Twitter API ${resp.status} ${resp.statusText}: ${body}`),
@@ -84,6 +91,19 @@ if (import.meta.vitest) {
 
   describe('TwitterAdapter.createPost', () => {
     afterEach(() => vi.restoreAllMocks());
+
+    it('classifies only credits-depleted 402 as expected unavailability', async () => {
+      const adapter = new TwitterAdapter('ck', 'cs', 'at', 'as');
+      vi.spyOn(globalThis, 'fetch')
+        .mockResolvedValueOnce(new Response('{"title":"CreditsDepleted","detail":"Your account has no credits"}', { status: 402 }))
+        .mockResolvedValueOnce(new Response('{"title":"Payment Required"}', { status: 402 }));
+      await expect(adapter.createPost({ title: 't', url: 'https://example.com', note: null })).rejects.toBeInstanceOf(
+        TwitterCreditsDepletedError,
+      );
+      await expect(adapter.createPost({ title: 't', url: 'https://example.com', note: null })).rejects.not.toBeInstanceOf(
+        TwitterCreditsDepletedError,
+      );
+    });
 
     it('API が non-2xx を返したら cause 付きで Error を throw する', async () => {
       vi.spyOn(globalThis, 'fetch').mockResolvedValue(
