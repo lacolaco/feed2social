@@ -24,7 +24,14 @@ export type Env = {
 
 const isDevelopment = process.env.NODE_ENV === 'development';
 
-export async function execute(env: Env, sentry: Sentry, dryRun = false) {
+const CREDITS_REPORT_WINDOW_MS = 5 * 60 * 1000;
+
+// Sentry の Errors 枠を守るため、クレジット不足は UTC 00:00 から 5 分未満の実行 (1 日 1 回) でだけ送る。
+export function isCreditsReportWindow(scheduledTime: number): boolean {
+  return scheduledTime % (24 * 60 * 60 * 1000) < CREDITS_REPORT_WINDOW_MS;
+}
+
+export async function execute(env: Env, sentry: Sentry, dryRun = false, scheduledTime = Date.now()) {
   // Bind fetch to globalThis to avoid Illegal Invocation errors.
   // // This is necessary because of Cloudflare Workers' isolation of the global scope.
   // https://developers.cloudflare.com/workers/observability/errors/#illegal-invocation-errors
@@ -101,7 +108,15 @@ export async function execute(env: Env, sentry: Sentry, dryRun = false) {
     }
   }
 
-  if (twitterCreditsFailures > 0) console.warn(`Twitter credits depleted for ${twitterCreditsFailures} posts`);
+  if (twitterCreditsFailures > 0) {
+    console.warn(`Twitter credits depleted for ${twitterCreditsFailures} posts`);
+    if (isCreditsReportWindow(scheduledTime)) {
+      sentry.withScope((scope) => {
+        scope.setFingerprint(['twitter-credits-depleted']);
+        scope.captureException(new Error(`Twitter credits depleted for ${twitterCreditsFailures} posts`));
+      });
+    }
+  }
   sentry.addBreadcrumb({ level: 'log', message: 'done' });
 }
 
@@ -132,7 +147,7 @@ export default {
     sentry.setContext('event', { cron: event.cron, scheduledTime: event.scheduledTime });
     const checkInId = sentry.captureCheckIn({ monitorSlug: 'scheduled-feed2social', status: 'in_progress' });
     ctx.waitUntil(
-      execute(env, sentry)
+      execute(env, sentry, false, event.scheduledTime)
         .then(() => {
           sentry.captureCheckIn({ checkInId, monitorSlug: 'scheduled-feed2social', status: 'ok' });
         })

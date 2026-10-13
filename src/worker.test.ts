@@ -43,7 +43,7 @@ vi.mock('./social/bluesky', () => ({
     }
   },
 }));
-import { execute, type Env } from './worker';
+import { execute, isCreditsReportWindow, type Env } from './worker';
 import { TwitterCreditsDepletedError } from './social/twitter';
 
 function item(id: string, completed: string[] = []): FeedItem {
@@ -51,8 +51,27 @@ function item(id: string, completed: string[] = []): FeedItem {
 }
 const env = { SENTRY_RELEASE: 'test', NOTION_TOKEN: 'test', NOTION_DATA_SOURCE_ID: 'test' } as Env;
 function sentry() {
-  return { addBreadcrumb: vi.fn(), captureException: vi.fn() };
+  const scope = { setFingerprint: vi.fn(), captureException: vi.fn() };
+  return {
+    addBreadcrumb: vi.fn(),
+    captureException: vi.fn(),
+    scope,
+    withScope: vi.fn((callback: (scope: unknown) => void) => callback(scope)),
+  };
 }
+const inWindow = Date.UTC(2026, 9, 13, 0, 0);
+const outOfWindow = Date.UTC(2026, 9, 13, 0, 5);
+
+describe('isCreditsReportWindow', () => {
+  it.each([
+    [Date.UTC(2026, 9, 12, 23, 59, 59, 999), false],
+    [Date.UTC(2026, 9, 13, 0, 0, 0, 0), true],
+    [Date.UTC(2026, 9, 13, 0, 4, 59, 999), true],
+    [Date.UTC(2026, 9, 13, 0, 5, 0, 0), false],
+  ])('%i -> %s', (time, expected) => {
+    expect(isCreditsReportWindow(time)).toBe(expected);
+  });
+});
 
 describe('Twitter credits depletion', () => {
   beforeEach(() => {
@@ -69,11 +88,24 @@ describe('Twitter credits depletion', () => {
     mocks.twitterPost.mockResolvedValue(undefined);
   });
 
+  it('sends one fixed-fingerprint event per run inside the report window regardless of item count', async () => {
+    const monitor = sentry();
+    const warning = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    mocks.twitterPost.mockRejectedValue(new TwitterCreditsDepletedError('Twitter API 402 credits depleted'));
+    await execute(env, monitor as never, false, inWindow);
+    expect(monitor.withScope).toHaveBeenCalledTimes(1);
+    expect(monitor.scope.setFingerprint).toHaveBeenCalledWith(['twitter-credits-depleted']);
+    expect(monitor.scope.captureException).toHaveBeenCalledTimes(1);
+    expect(monitor.captureException).not.toHaveBeenCalled();
+    expect(warning).toHaveBeenCalledTimes(1);
+    warning.mockRestore();
+  });
+
   it('warns once per run without Sentry exceptions while saving healthy networks and retrying unfinished Twitter items', async () => {
     const monitor = sentry();
     const warning = vi.spyOn(console, 'warn').mockImplementation(() => {});
     mocks.twitterPost.mockRejectedValue(new TwitterCreditsDepletedError('Twitter API 402 credits depleted'));
-    await execute(env, monitor as never);
+    await execute(env, monitor as never, false, outOfWindow);
     expect(mocks.twitterPost).toHaveBeenCalledTimes(2);
     expect(mocks.misskeyPost).toHaveBeenCalledTimes(2);
     expect(mocks.blueskyPost).toHaveBeenCalledTimes(2);
@@ -82,10 +114,11 @@ describe('Twitter credits depletion', () => {
       ['misskey', 'bluesky'],
     ]);
     expect(monitor.captureException).not.toHaveBeenCalled();
+    expect(monitor.withScope).not.toHaveBeenCalled();
     expect(warning).toHaveBeenCalledTimes(1);
 
     mocks.fetchItems.mockImplementation(async () => [item('first', ['misskey', 'bluesky']), item('second', ['misskey', 'bluesky'])]);
-    await execute(env, monitor as never);
+    await execute(env, monitor as never, false, outOfWindow);
     expect(mocks.twitterPost).toHaveBeenCalledTimes(4);
     expect(mocks.misskeyPost).toHaveBeenCalledTimes(2);
     expect(mocks.blueskyPost).toHaveBeenCalledTimes(2);
