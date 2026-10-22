@@ -77,7 +77,7 @@ export async function execute(env: Env, sentry: Sentry, dryRun = false, schedule
             await saveFeedItemUrl(notion, feedItem);
           } catch (e) {
             console.error(`failed to update url for ${feedItem.notionPageId}:`, e);
-            sentry.captureException(e);
+            sentry.captureException(e, { tags: { notionPageId: feedItem.notionPageId } });
           }
         }
       }

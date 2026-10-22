@@ -14,25 +14,37 @@ function isTrackingParam(key: string): boolean {
   return key.toLowerCase().startsWith(UTM_PREFIX) || TRACKING_PARAMS.has(key);
 }
 
-export function sanitizeTrackingParams(input: string): string {
-  let url: URL;
+function decodeKey(pair: string): string {
+  const key = pair.split('=')[0].replace(/\+/g, ' ');
   try {
-    url = new URL(input);
+    return decodeURIComponent(key);
+  } catch {
+    return key;
+  }
+}
+
+// 残すパラメータの表記を変えないため、URLSearchParams で再直列化せず、クエリを `&` で分けた要素のうち除去するものだけを取り除く。
+export function sanitizeTrackingParams(input: string): string {
+  try {
+    new URL(input);
   } catch {
     return input;
   }
 
-  let mutated = false;
-  for (const key of Array.from(url.searchParams.keys())) {
-    if (isTrackingParam(key)) {
-      url.searchParams.delete(key);
-      mutated = true;
-    }
-  }
-  if (!mutated) {
+  const hashIndex = input.indexOf('#');
+  const beforeHash = hashIndex === -1 ? input : input.slice(0, hashIndex);
+  const hash = hashIndex === -1 ? '' : input.slice(hashIndex);
+  const queryIndex = beforeHash.indexOf('?');
+  if (queryIndex === -1) {
     return input;
   }
-  return url.toString();
+  const base = beforeHash.slice(0, queryIndex);
+  const pairs = beforeHash.slice(queryIndex + 1).split('&');
+  const kept = pairs.filter((pair) => !isTrackingParam(decodeKey(pair)));
+  if (kept.length === pairs.length) {
+    return input;
+  }
+  return `${base}${kept.length > 0 ? `?${kept.join('&')}` : ''}${hash}`;
 }
 
 if (import.meta.vitest) {
@@ -57,6 +69,17 @@ if (import.meta.vitest) {
         'https://www.oreilly.co.jp/books/9784814401789/',
       );
       expect(sanitizeTrackingParams('https://example.com/a?UTM_Source=x&q=1#top')).toBe('https://example.com/a?q=1#top');
+    });
+
+    test('keeps the remaining query exactly as written', () => {
+      expect(sanitizeTrackingParams('https://example.com/?q=a%20b&utm_source=x')).toBe('https://example.com/?q=a%20b');
+      expect(sanitizeTrackingParams('https://example.com/?a=1;b=2&utm_source=x')).toBe('https://example.com/?a=1;b=2');
+      expect(sanitizeTrackingParams('https://example.com/?id&utm_x=1')).toBe('https://example.com/?id');
+      expect(sanitizeTrackingParams('https://example.com/?q=a~b(c)*&utm_x=1')).toBe('https://example.com/?q=a~b(c)*');
+    });
+
+    test('removes a percent-encoded utm_ key', () => {
+      expect(sanitizeTrackingParams('https://example.com/?utm%5Fsource=x&q=1')).toBe('https://example.com/?q=1');
     });
 
     test('removes gclid and fbclid', () => {
