@@ -178,9 +178,9 @@ if (import.meta.vitest) {
   });
 
   describe('integration tests', () => {
-    test('should fetch actual Japanese page title correctly', async () => {
-      const url = 'https://user.keio.ac.jp/~rhotta/hellog/2025-06-21-1.html';
-      const expectedTitle = '#5899. 「クレイフィッシュ語」？ --- ヘルメイトさんたちによる用語開発';
+    test('should fetch actual EUC-JP Japanese page title correctly', async () => {
+      const url = 'https://www.debian.or.jp/community/';
+      const expectedTitle = 'Debian JP Project - コミュニティ';
 
       // 実際のHTTPリクエストでテスト
       const title = await fetchPageTitle(url);
