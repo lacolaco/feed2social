@@ -3,6 +3,8 @@ export type FeedItem = {
   notionPageTitle: string;
   completedNetworkKeys: Set<string>;
   feedUrl: string;
+  // Notion に保存されている URL。feedUrl と異なるときだけ書き戻す。
+  notionUrl: string;
 };
 
 export type PostData = {

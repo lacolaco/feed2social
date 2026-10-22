@@ -1,18 +1,18 @@
 // Well-known tracking query parameters. Conservative list — start minimal.
 // 拡張する場合はサイト別の誤検出に注意（特に `ref` / `source` は除外している）。
 const TRACKING_PARAMS: ReadonlySet<string> = new Set([
-  // Google Analytics / UTM
-  'utm_source',
-  'utm_medium',
-  'utm_campaign',
-  'utm_term',
-  'utm_content',
-  'utm_id',
   // Google Ads
   'gclid',
   // Facebook
   'fbclid',
 ]);
+
+// `utm_mediun` のような綴り間違いも除去するため、UTM は完全一致の一覧ではなく前方一致で判定する。
+const UTM_PREFIX = 'utm_';
+
+function isTrackingParam(key: string): boolean {
+  return key.toLowerCase().startsWith(UTM_PREFIX) || TRACKING_PARAMS.has(key);
+}
 
 export function sanitizeTrackingParams(input: string): string {
   let url: URL;
@@ -24,7 +24,7 @@ export function sanitizeTrackingParams(input: string): string {
 
   let mutated = false;
   for (const key of Array.from(url.searchParams.keys())) {
-    if (TRACKING_PARAMS.has(key)) {
+    if (isTrackingParam(key)) {
       url.searchParams.delete(key);
       mutated = true;
     }
@@ -50,6 +50,13 @@ if (import.meta.vitest) {
     test('removes utm_* params', () => {
       const input = 'https://example.com/article?utm_source=newsletter&utm_medium=email&utm_campaign=spring';
       expect(sanitizeTrackingParams(input)).toBe('https://example.com/article');
+    });
+
+    test('removes utm_ params case-insensitively, including misspelled names', () => {
+      expect(sanitizeTrackingParams('https://www.oreilly.co.jp/books/9784814401789/?utm_mediun=referral')).toBe(
+        'https://www.oreilly.co.jp/books/9784814401789/',
+      );
+      expect(sanitizeTrackingParams('https://example.com/a?UTM_Source=x&q=1#top')).toBe('https://example.com/a?q=1#top');
     });
 
     test('removes gclid and fbclid', () => {

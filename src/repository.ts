@@ -50,7 +50,8 @@ export async function fetchNewFeedItems(notion: NotionClient, dataSourceId: stri
     assertPropertyType(properties.url, 'url');
     assertPropertyType(properties.feed2social_completed, 'multi_select');
 
-    const url = sanitizeTrackingParams(properties.url.url ?? '');
+    const notionUrl = properties.url.url ?? '';
+    const url = sanitizeTrackingParams(notionUrl);
     if (url === '') {
       console.log(`skipped: ${page.id} has no url`);
       continue;
@@ -58,7 +59,7 @@ export async function fetchNewFeedItems(notion: NotionClient, dataSourceId: stri
     const notionPageTitle = properties.title.title.map((t) => t.plain_text).join('');
     const completedNetworkKeys = new Set(properties.feed2social_completed.multi_select.map((s) => s.name));
 
-    items.push({ notionPageId: page.id, notionPageTitle, feedUrl: url, completedNetworkKeys });
+    items.push({ notionPageId: page.id, notionPageTitle, feedUrl: url, notionUrl, completedNetworkKeys });
   }
   return items;
 }
@@ -74,6 +75,13 @@ export async function saveFeedItemStatus(notion: NotionClient, item: FeedItem) {
   });
 }
 
+export async function saveFeedItemUrl(notion: NotionClient, item: FeedItem) {
+  return await notion.pages.update({
+    page_id: item.notionPageId,
+    properties: { url: { url: item.feedUrl } },
+  });
+}
+
 function assertPropertyType<T extends string>(obj: { type: string }, type: T): asserts obj is { type: T } {
   if (obj.type !== type) {
     throw new Error(`unexpected type: ${obj.type}`);
@@ -81,7 +89,23 @@ function assertPropertyType<T extends string>(obj: { type: string }, type: T): a
 }
 
 if (import.meta.vitest) {
-  const { describe, it, expect } = import.meta.vitest;
+  const { describe, it, expect, vi } = import.meta.vitest;
+  describe('saveFeedItemUrl', () => {
+    it('updates only the url property with the sanitized value', async () => {
+      const update = vi.fn().mockResolvedValue({});
+      const item = {
+        notionPageId: 'p1',
+        notionPageTitle: 't',
+        feedUrl: 'https://a.example/x',
+        notionUrl: 'https://a.example/x?utm_source=y',
+        completedNetworkKeys: new Set<string>(),
+      };
+      await saveFeedItemUrl({ pages: { update } } as never, item);
+      expect(update).toHaveBeenCalledTimes(1);
+      expect(update).toHaveBeenCalledWith({ page_id: 'p1', properties: { url: { url: 'https://a.example/x' } } });
+    });
+  });
+
   describe('buildFeedItemFilter', () => {
     it('uses an 8-day rolling window on created_time instead of this_week', () => {
       const now = new Date('2026-06-22T03:00:00.000Z');

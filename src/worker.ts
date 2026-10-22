@@ -3,7 +3,7 @@ import { ExecutionContext, Hono } from 'hono';
 import { createPostData } from './create-post';
 import { FeedItem, SocialNetworkAdapter } from './models';
 import { initSentry, Sentry } from './observability/sentry';
-import { fetchNewFeedItems, saveFeedItemStatus } from './repository';
+import { fetchNewFeedItems, saveFeedItemStatus, saveFeedItemUrl } from './repository';
 import { BlueskyAdapter } from './social/bluesky';
 import { MisskeyAdapter } from './social/misskey';
 import { TwitterAdapter, TwitterCreditsDepletedError } from './social/twitter';
@@ -67,6 +67,20 @@ export async function execute(env: Env, sentry: Sentry, dryRun = false, schedule
     try {
       sentry.addBreadcrumb({ level: 'log', message: 'posting feed item to social', data: feedItem });
       console.log(`posting: ${JSON.stringify(feedItem, null, 2)}`);
+
+      if (feedItem.feedUrl !== feedItem.notionUrl) {
+        if (dryRun) {
+          console.log(`[DRY RUN] would update url for: ${feedItem.notionPageId}`);
+        } else {
+          // url の書き戻しに失敗しても、投稿と完了記録は止めない。
+          try {
+            await saveFeedItemUrl(notion, feedItem);
+          } catch (e) {
+            console.error(`failed to update url for ${feedItem.notionPageId}:`, e);
+            sentry.captureException(e);
+          }
+        }
+      }
 
       const networks = allNetworkAdapters.filter((network) => !feedItem.completedNetworkKeys.has(network.getNetworkKey()));
       console.log(`posted to ${networks.map((network) => network.getNetworkKey()).join(', ')}`);
