@@ -82,6 +82,6 @@ This is a Cloudflare Workers application that automatically posts content from a
 
 ### Dependencies
 
-- Node.js ^24.0.0 and pnpm 10.33.4 required (package.json is authoritative)
+- Node.js ^24.0.0 and pnpm 10.34.7 required (package.json is authoritative)
 - Uses Cloudflare Workers runtime
 - Key libraries: Hono (web framework), Notion client, Cheerio (HTML parsing), encoding-japanese

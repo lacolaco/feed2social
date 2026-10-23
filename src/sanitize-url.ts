@@ -1,17 +1,34 @@
 // Well-known tracking query parameters. Conservative list — start minimal.
 // 拡張する場合はサイト別の誤検出に注意（特に `ref` / `source` は除外している）。
 const TRACKING_PARAMS: ReadonlySet<string> = new Set([
-  // Google Ads
+  // Google Ads / Analytics
   'gclid',
+  'dclid',
+  'gbraid',
+  'wbraid',
+  '_ga',
+  '_gl',
   // Facebook
   'fbclid',
+  // Instagram
+  'igshid',
+  'igsh',
+  // Mailchimp
+  'mc_cid',
+  'mc_eid',
+  // Microsoft Ads
+  'msclkid',
+  // Twitter / Yandex / TikTok
+  'twclid',
+  'yclid',
+  'ttclid',
 ]);
 
 // `utm_mediun` のような綴り間違いも除去するため、UTM は完全一致の一覧ではなく前方一致で判定する。
 const UTM_PREFIX = 'utm_';
 
 function isTrackingParam(key: string): boolean {
-  return key.toLowerCase().startsWith(UTM_PREFIX) || TRACKING_PARAMS.has(key);
+  return key.toLowerCase().startsWith(UTM_PREFIX) || TRACKING_PARAMS.has(key.toLowerCase());
 }
 
 function decodeKey(pair: string): string {
@@ -85,6 +102,32 @@ if (import.meta.vitest) {
     test('removes gclid and fbclid', () => {
       expect(sanitizeTrackingParams('https://example.com/?gclid=abc')).toBe('https://example.com/');
       expect(sanitizeTrackingParams('https://example.com/?fbclid=xyz')).toBe('https://example.com/');
+    });
+
+    test.each([
+      'igshid',
+      'igsh',
+      'mc_cid',
+      'mc_eid',
+      'msclkid',
+      'twclid',
+      'yclid',
+      'ttclid',
+      'dclid',
+      'gbraid',
+      'wbraid',
+      '_ga',
+      '_gl',
+      'GCLID',
+      'FbClid',
+    ])('removes %s while keeping the other params as written', (name) => {
+      expect(sanitizeTrackingParams(`https://example.com/?q=a%20b&${name}=1&z=2#top`)).toBe('https://example.com/?q=a%20b&z=2#top');
+      expect(sanitizeTrackingParams(`https://example.com/?${name}=1`)).toBe('https://example.com/');
+    });
+
+    test('keeps params that only resemble the removed names', () => {
+      const input = 'https://example.com/?si=abc&igsh2=1&ga=1&gl=jp';
+      expect(sanitizeTrackingParams(input)).toBe(input);
     });
 
     test('keeps legitimate params while stripping tracking params', () => {
