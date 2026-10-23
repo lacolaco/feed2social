@@ -47,7 +47,7 @@ importers:
         version: 4.2.2
       '@types/encoding-japanese':
         specifier: ^2.2.1
-        version: 2.2.1
+        version: 2.4.0
       prettier:
         specifier: ^3.0.2
         version: 3.9.10
@@ -824,8 +824,9 @@ packages:
   '@types/deep-eql@4.0.2':
     resolution: {integrity: sha512-c9h9dVVMigMPc4bwTvC5dxqtqJZwQPePsWjPlpSOnojbor6pGqdk541lfA7AqFQr5pB1BRdq0juY9db81BwyFw==}
 
-  '@types/encoding-japanese@2.2.1':
-    resolution: {integrity: sha512-6jjepuTusvySxMLP7W6usamlbgf0F4sIDvm7EzYePjLHY7zWUv4yz2PLUnu0vuNVtXOTLu2cRdFcDg40J5Owsw==}
+  '@types/encoding-japanese@2.4.0':
+    resolution: {integrity: sha512-3+DRbiNkPVZ9qcKmRDHwsPl/hA36EBj3r4gGHm0wA1bcVE4/c8X1sHEl0yJ6Uf+1NKwumRbdQI+CPYVv+lOHZA==}
+    deprecated: This is a stub types definition. encoding-japanese provides its own type definitions, so you do not need this installed.
 
   '@types/estree@1.0.9':
     resolution: {integrity: sha512-GhdPgy1el4/ImP05X05Uw4cw2/M93BCUmnEvWZNStlCzEKME4Fkk+YpoA5OiHNQmoS7Cafb8Xa3Pya8m1Qrzeg==}
@@ -1778,7 +1779,9 @@ snapshots:
 
   '@types/deep-eql@4.0.2': {}
 
-  '@types/encoding-japanese@2.2.1': {}
+  '@types/encoding-japanese@2.4.0':
+    dependencies:
+      encoding-japanese: 2.4.0
 
   '@types/estree@1.0.9': {}
 
