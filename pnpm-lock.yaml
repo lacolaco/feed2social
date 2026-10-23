@@ -13,7 +13,7 @@ importers:
         version: 0.20.8
       '@notionhq/client':
         specifier: ^5.0.0
-        version: 5.27.0
+        version: 5.27.1
       cheerio:
         specifier: 1.2.0
         version: 1.2.0
@@ -642,8 +642,8 @@ packages:
     os: [linux]
     libc: [glibc]
 
-  '@notionhq/client@5.27.0':
-    resolution: {integrity: sha512-JnkLtAzSDrEnvtZ8dQ5L4KO+xyL5g01xK5qmKTmhJ5KFY8LWsMyFG033vHCj0mFcsz9thAMjfcAQz/SWxiexag==}
+  '@notionhq/client@5.27.1':
+    resolution: {integrity: sha512-WedYyPNMpQbE4Dz5h7zHTsh03veUGqBzxWyztbIh0tNbgHU+XbDi/jc1KgL3j1p8y06nHLEmGYygntwICxJUNw==}
     engines: {node: '>=18'}
 
   '@poppinss/colors@4.1.6':
@@ -1664,7 +1664,7 @@ snapshots:
   '@napi-rs/lzma-linux-x64-gnu@1.5.1':
     optional: true
 
-  '@notionhq/client@5.27.0': {}
+  '@notionhq/client@5.27.1': {}
 
   '@poppinss/colors@4.1.6':
     dependencies:
