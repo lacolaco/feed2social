@@ -68,7 +68,8 @@ export async function execute(env: Env, sentry: Sentry, dryRun = false, schedule
       sentry.addBreadcrumb({ level: 'log', message: 'posting feed item to social', data: feedItem });
       console.log(`posting: ${JSON.stringify(feedItem, null, 2)}`);
 
-      if (feedItem.feedUrl !== feedItem.notionUrl) {
+      // 一部の SNS に投稿済みの項目は書き戻しを試さない。失敗が続く項目で、5 分ごとの再試行と Sentry 通知が繰り返されるのを防ぐ。
+      if (feedItem.completedNetworkKeys.size === 0 && feedItem.feedUrl !== feedItem.notionUrl) {
         if (dryRun) {
           console.log(`[DRY RUN] would update url for: ${feedItem.notionPageId}`);
         } else {

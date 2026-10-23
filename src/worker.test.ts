@@ -175,6 +175,24 @@ describe('Notion url normalization', () => {
     expect(mocks.saveUrl.mock.calls[0][1]).toMatchObject({ notionPageId: 'changed', feedUrl: 'https://example.com/changed' });
   });
 
+  it('skips the url update for items that already have a completed network, but still posts the cleaned url', async () => {
+    mocks.fetchItems.mockResolvedValue([item('partial', ['misskey'], 'https://example.com/partial?utm_source=x')]);
+    await execute(env, sentry() as never);
+    expect(mocks.saveUrl).not.toHaveBeenCalled();
+    expect(mocks.twitterPost).toHaveBeenCalledWith(expect.objectContaining({ url: 'https://example.com/partial' }));
+    expect(mocks.saveStatus).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not report to Sentry on repeated runs for an item with a completed network', async () => {
+    const monitor = sentry();
+    mocks.saveUrl.mockRejectedValue(new Error('notion 500'));
+    mocks.fetchItems.mockResolvedValue([item('partial', ['bluesky'], 'https://example.com/partial?utm_source=x')]);
+    await execute(env, monitor as never);
+    await execute(env, monitor as never);
+    expect(mocks.saveUrl).not.toHaveBeenCalled();
+    expect(monitor.captureException).not.toHaveBeenCalled();
+  });
+
   it('does not update the url in dry-run mode', async () => {
     mocks.fetchItems.mockResolvedValue([item('changed', [], 'https://example.com/changed?utm_source=x')]);
     await execute(env, sentry() as never, true);
