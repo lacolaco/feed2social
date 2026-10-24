@@ -3,7 +3,7 @@
     "target": "es2023",
     "lib": ["es2023", "dom"],
     "module": "es2022",
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "types": ["@cloudflare/workers-types", "vitest/importMeta"],
     "resolveJsonModule": true,
     "noEmit": true,
