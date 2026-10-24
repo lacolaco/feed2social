@@ -1,13 +1,16 @@
 import { load } from 'cheerio';
 import { decodeHtmlBytes } from './encoding';
 
+// 遮断画面のタイトル。200 で返る画面を拾う。403 は別言語や別種の遮断画面も含めて、ステータスで拾う。
+const BLOCK_PAGE_TITLES = ['Just a moment...', 'Attention Required! | Cloudflare'];
+
 /**
  * 指定されたURLからウェブページのタイトルを取得します。
  *
  * この関数は指定されたURLにHTTP GETリクエストを送り、ページタイトルを抽出しようとします。
  * まず、Open Graphメタデータとして一般的に使用される`og:title`メタタグを探します。
  * `og:title`が見つからない場合は、HTMLドキュメント内の`<title>`要素の内容を使用します。
- * どちらも見つからない場合は、空の文字列を返します。
+ * どちらも見つからない場合、または取得先が遮断画面 (403 の応答、またはタイトルが遮断画面のもの) の場合は、空の文字列を返します。
  *
  * @param url - タイトルを取得するウェブページのURL。
  * @returns ページタイトルを文字列として解決するPromise。タイトルが見つからない場合は空の文字列を返します。
@@ -27,18 +30,15 @@ export async function fetchPageTitle(url: string): Promise<string> {
   const html = decodeHtmlBytes(bytes, resp);
 
   const $ = load(html);
-  // search title from og:title
-  const ogTitle = $('meta[property="og:title"]').attr('content');
-  if (ogTitle) {
-    return ogTitle;
-  }
-  // search title from <title>
-  const title = $('title').text();
-  if (title) {
-    return title;
+  // search title from og:title, then <title>
+  const title = $('meta[property="og:title"]').attr('content') || $('title').text() || '';
+
+  if (resp.status === 403 || BLOCK_PAGE_TITLES.includes(title.trim())) {
+    console.warn(`blocked page detected: ${url} (status ${resp.status}, title ${JSON.stringify(title)})`);
+    return '';
   }
 
-  return '';
+  return title;
 }
 
 if (import.meta.vitest) {
