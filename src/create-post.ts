@@ -48,6 +48,7 @@ if (import.meta.vitest) {
   test.each([
     [403, 'Just a moment...'],
     [403, 'Attention Required! | Cloudflare'],
+    [403, '访问被拒绝'],
     [200, 'Just a moment...'],
   ])('遮断画面 (status %i, title %s) では Notion のタイトルを note なしで使い、検出をログに残す', async (status, title) => {
     stubFetch(status, title);
