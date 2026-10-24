@@ -8,7 +8,7 @@ Shared coding-agent instructions are in [AGENTS.md](AGENTS.md). Claude Code 2.1.
 
 ## Development setup
 
-Use Node.js `^24.0.0` and pnpm `10.34.7`, as declared in `package.json`. Select Node 24 with your runtime manager and verify `node --version` and `pnpm --version` before installing:
+Use Node.js `^24.0.0` and pnpm `12.14.0`, as declared in `package.json`. Select Node 24 with your runtime manager and verify `node --version` and `pnpm --version` before installing:
 
 ```sh
 pnpm install --frozen-lockfile
@@ -55,7 +55,7 @@ Optional type checking:
 pnpm exec tsc --noEmit
 ```
 
-The existing TypeScript 6 configuration uses deprecated `moduleResolution=node` and fails this command. Suppressing the deprecation also reveals an `@atproto/api` resolution error. For a diagnostic check without editing configuration:
+TypeScript 7 removed `moduleResolution=node` (node10), which `tsconfig.json` still sets, so this command fails with TS5108. For a diagnostic check without editing configuration:
 
 ```sh
 pnpm exec tsc --noEmit --moduleResolution bundler

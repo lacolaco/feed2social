@@ -1,0 +1,12 @@
+overrides:
+  # @atproto/api と、その @atproto/lexicon・@atproto/xrpc・@atproto/common-web は zod ^3.23.8 を指定する。
+  # zod 3 系には GHSA-mrhx-c7xc-m3w5 を修正したリリースが無いので、修正済みの 4.6.6 以上に解決する。
+  # 上流が zod 4 に対応したら、この上書きを外す。
+  zod: ^4.6.6
+
+# pnpm 12 は、許可の指定が無いビルドスクリプト付きの依存があると導入を止める。
+# pnpm 10 のときと同じく、これらのビルドスクリプトは実行しない。
+allowBuilds:
+  core-js: false
+  esbuild: false
+  workerd: false
