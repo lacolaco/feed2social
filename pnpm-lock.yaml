@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       '@atproto/api':
-        specifier: ^0.27.0
-        version: 0.27.0
+        specifier: ^0.28.0
+        version: 0.28.1
       '@notionhq/client':
         specifier: ^5.0.0
         version: 5.27.1
@@ -63,8 +63,8 @@ importers:
 
 packages:
 
-  '@atproto/api@0.27.0':
-    resolution: {integrity: sha512-mqHrHl/9ppoKA0JWXxl29knwUQPQAsJQEDQYv7zPZU8bJdMC2f5mnqr/f0nKKxk/MSCLQJ6j0OQHBn1ZMk4LQQ==}
+  '@atproto/api@0.28.1':
+    resolution: {integrity: sha512-mPMXuM5F+Vh+dOlu7Ys6/ZVrTpG+PIUg/LartoVijok+Ki6OmJrtBGgRRCppx6Okjs8aW1yH3JZG73gqGfU1zA==}
     engines: {node: '>=22'}
 
   '@atproto/common-web@0.5.15':
@@ -1302,7 +1302,7 @@ packages:
 
 snapshots:
 
-  '@atproto/api@0.27.0':
+  '@atproto/api@0.28.1':
     dependencies:
       '@atproto/common-web': 0.5.15
       '@atproto/lexicon': 0.7.17
