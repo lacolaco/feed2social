@@ -4,6 +4,9 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+overrides:
+  zod: ^4.6.6
+
 importers:
 
   .:
@@ -1297,8 +1300,8 @@ packages:
   youch@4.1.0-beta.10:
     resolution: {integrity: sha512-rLfVLB4FgQneDr0dv1oddCVZmKjcJ6yX6mS4pU82Mq/Dt9a3cLZQ62pDBL4AUO+uVrCvtWz3ZFUL2HFAFJ/BXQ==}
 
-  zod@3.25.76:
-    resolution: {integrity: sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ==}
+  zod@4.6.7:
+    resolution: {integrity: sha512-g8W2D2kU6a8untc053fX1uVBKzM7yqAxW/3zwk83+6RyF2+SKOuV+c0wBDhUwzV1PaGapmZH+rmcUzPf+3CGwg==}
 
 snapshots:
 
@@ -1311,14 +1314,14 @@ snapshots:
       await-lock: 3.0.0
       multiformats: 13.4.2
       tlds: 1.261.0
-      zod: 3.25.76
+      zod: 4.6.7
 
   '@atproto/common-web@0.5.15':
     dependencies:
       '@atproto/lex-data': 0.1.8
       '@atproto/lex-json': 0.1.7
       '@atproto/syntax': 0.7.7
-      zod: 3.25.76
+      zod: 4.6.7
 
   '@atproto/lex-data@0.1.8':
     dependencies:
@@ -1336,7 +1339,7 @@ snapshots:
       '@atproto/common-web': 0.5.15
       '@atproto/syntax': 0.7.7
       multiformats: 13.4.2
-      zod: 3.25.76
+      zod: 4.6.7
 
   '@atproto/syntax@0.7.7':
     dependencies:
@@ -1346,7 +1349,7 @@ snapshots:
   '@atproto/xrpc@0.8.16':
     dependencies:
       '@atproto/lexicon': 0.7.17
-      zod: 3.25.76
+      zod: 4.6.7
 
   '@babel/runtime@7.27.0':
     dependencies:
@@ -2293,4 +2296,4 @@ snapshots:
       cookie: 1.1.1
       youch-core: 0.3.3
 
-  zod@3.25.76: {}
+  zod@4.6.7: {}
