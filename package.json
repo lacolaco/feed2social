@@ -13,7 +13,7 @@
   "engines": {
     "node": "^24.0.0"
   },
-  "packageManager": "pnpm@10.34.7",
+  "packageManager": "pnpm@12.14.0",
   "devDependencies": {
     "@cloudflare/workers-types": "^5.0.0",
     "@types/crypto-js": "^4.1.1",
