@@ -209,7 +209,7 @@ describe('Notion url normalization', () => {
       item('second', [], 'https://example.com/second?utm_source=x'),
     ]);
     await execute(env, monitor as never);
-    expect(monitor.captureException).toHaveBeenCalledWith(error, { tags: { notionPageId: 'first' } });
+    expect(monitor.captureException).toHaveBeenCalledWith(error, { captureContext: { tags: { notionPageId: 'first' } } });
     expect(mocks.saveUrl).toHaveBeenCalledTimes(2);
     expect(mocks.twitterPost).toHaveBeenCalledTimes(2);
     expect(mocks.saveStatus).toHaveBeenCalledTimes(2);
