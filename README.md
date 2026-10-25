@@ -35,6 +35,7 @@ Offline unit tests and formatting checks:
 ```sh
 pnpm exec vitest run --testNamePattern='^(?!.*integration tests)'
 pnpm run lint
+pnpm run typecheck
 ```
 
 Tests are embedded in source files through `import.meta.vitest`; `vite.config.ts` enables `includeSource`. Twitter adapter tests mock `fetch` and do not post. The command above excludes the live HTTP integration test in `src/page-title.ts`.

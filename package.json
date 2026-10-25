@@ -2,13 +2,15 @@
   "name": "feed2social",
   "version": "0.0.0",
   "private": true,
+  "type": "module",
   "scripts": {
     "deploy": "wrangler deploy",
     "start": "NODE_ENV=development wrangler dev --test-scheduled",
     "format": "prettier --cache --write \"./**/*.{ts,js,json}\"",
     "test": "vitest",
     "test:ci": "vitest run",
-    "lint": "prettier --check \"./**/*.{ts,js,json}\""
+    "lint": "prettier --check \"./**/*.{ts,js,json}\"",
+    "typecheck": "tsc --noEmit"
   },
   "engines": {
     "node": "^24.0.0"
