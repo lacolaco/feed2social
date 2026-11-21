@@ -174,7 +174,7 @@ importers:
         version: 0.27.0
       '@notionhq/client':
         specifier: ^5.0.0
-        version: 5.27.1
+        version: 5.31.1
       cheerio:
         specifier: 1.2.0
         version: 1.2.0
@@ -198,7 +198,7 @@ importers:
         version: 4.1.1
       tweet-truncator:
         specifier: ^3.0.1
-        version: 3.0.2
+        version: 3.0.2(supports-color@10.2.2)
     devDependencies:
       '@cloudflare/workers-types':
         specifier: ^5.0.0
@@ -643,9 +643,9 @@ packages:
   '@jridgewell/trace-mapping@0.3.9':
     resolution: {integrity: sha512-3Belt6tdc8bPgAtbcmdtNJlirVoTmEb5e2gC94PnkwEW9jI6CAHUeoG85tjWP5WquqfavoMtMwiG4P926ZKKuQ==}
 
-  '@notionhq/client@5.27.1':
-    resolution: {integrity: sha512-WedYyPNMpQbE4Dz5h7zHTsh03veUGqBzxWyztbIh0tNbgHU+XbDi/jc1KgL3j1p8y06nHLEmGYygntwICxJUNw==}
-    engines: {node: '>=18'}
+  '@notionhq/client@5.31.1':
+    resolution: {integrity: sha512-LuVlgHTkHPZf0LOILKVaDboYOyIXNHP9x2DSMhrJzUJjB7GzWjves1OA+8iqJxn1QPW6OqXdp0sS/z0Vh+JACA==}
+    engines: {node: '>=22'}
 
   '@oxc-project/types@0.155.0':
     resolution: {integrity: sha512-SeE8JPwW1xs1tHeNycjUtUBdhorRa8o4jlvjwk49R7/Z291i+4DQa7JJIgOm/TaYQZx+QrPQbVJ/9c8dMIZN8Q==}
@@ -1714,7 +1714,7 @@ snapshots:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.6.0
 
-  '@notionhq/client@5.27.1': {}
+  '@notionhq/client@5.31.1': {}
 
   '@oxc-project/types@0.155.0': {}
 
@@ -1930,9 +1930,11 @@ snapshots:
 
   css-what@6.1.0: {}
 
-  debug@4.4.0:
+  debug@4.4.0(supports-color@10.2.2):
     dependencies:
       ms: 2.1.3
+    optionalDependencies:
+      supports-color: 10.2.2
 
   detect-libc@2.1.2: {}
 
@@ -2228,9 +2230,9 @@ snapshots:
 
   tslib@2.8.1: {}
 
-  tweet-truncator@3.0.2:
+  tweet-truncator@3.0.2(supports-color@10.2.2):
     dependencies:
-      debug: 4.4.0
+      debug: 4.4.0(supports-color@10.2.2)
       twitter-text: 3.1.0
     transitivePeerDependencies:
       - supports-color
